@@ -238,10 +238,10 @@ export function getTypedDataForJWT(message: SignData, domain: StarknetDomain): T
         domain: domain,
         types: {
             ...domainType,
-            Message: [{name: "message", type: "felt"}]
+            Message: [{name: "welcome", type: "string"}, {name: "to", type: "string"}, {name: "exchange", type: "string"}]
         },
         primaryType: "Message",
-        message: {message: message}
+        message: { welcome:'Sign in to LayerAkira', to:'\tChallenge:',exchange:message}
     };
 }
 
