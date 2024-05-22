@@ -20,6 +20,9 @@ import {
   normalize,
   sleep,
 } from "@/api/websocket/utils.ts";
+import {
+  convertToBigintRecursively,
+} from "@/api/http/utils.ts";
 
 /**
  * Represents a LayerAkira WebSocket API.
@@ -138,6 +141,13 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
     (evt: any | SocketEvent.DISCONNECT) => Promise<void>
   > = new Map();
   private rpcReqId = 0;
+  private readonly exclusionParseBigIntFields = [
+    "maker",
+    "order_hash",
+    "taker",
+    "client",
+    "hash",
+  ];
 
   /**
    * Constructs a new LayerAkiraWSSAPI instance.
@@ -491,7 +501,10 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
    * @param e The WebSocket message event containing the message data.
    */
   private async handleSocketMessage(e: IMessageEvent) {
-    const json = JSON.parse(e.data.toString());
+    const json = convertToBigintRecursively(
+      JSON.parse(e.data.toString()),
+      this.exclusionParseBigIntFields,
+    );
     if (json.id !== undefined) return this.jobs.get(json.id)?.event.emit(json);
     let subscription: number;
     if (

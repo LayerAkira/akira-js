@@ -27,12 +27,12 @@ export type ERC20Token = string;
  * Represents the quantity of an asset.
  */
 export interface Quantity {
-  base_qty: BigNumberish; // Quantity in the base asset, expressed as raw amount.
-  quote_qty: BigNumberish; // Quantity in the quote asset, expressed as raw amount.
-  base_asset: BigNumberish; // Raw amount of the base asset representing 1 unit. e.g 1eth = 10**18
+  base_qty: bigint; // Quantity in the base asset, expressed as raw amount.
+  quote_qty: bigint; // Quantity in the quote asset, expressed as raw amount.
+  base_asset: bigint; // Raw amount of the base asset representing 1 unit. e.g 1eth = 10**18
 }
 
-enum Side {
+export enum OrderSide {
   BUY = 0,
   SELL = 1,
 }
@@ -82,7 +82,7 @@ export interface Constraints {
   created_at: OrderTimestamp; // The timestamp when the order was created, epoch, in seconds
   stp: STPMode; // The self-trade prevention mode for the order.
   nonce: number; // The nonce value associated with the maker
-  min_receive_amount: BigNumberish; // The minimum amount expected to be reachieved by the trade after full order fulfillment, only applicable to router taker external funds orders
+  min_receive_amount: bigint; // The minimum amount expected to be reachieved by the trade after full order fulfillment, only applicable to router taker external funds orders
   router_signer: Address; // The address of the router signer, that routes this orders to LayerAkira
 }
 
@@ -101,8 +101,8 @@ export interface FixedFee {
 export interface GasFee {
   gas_per_action: number; // The max gas cost per action, similar semantic like with blockchain fees
   fee_token: ERC20Token; // The token used for paying gas fees
-  max_gas_price: BigNumberish; // The max price per gas, similar semantic like with blockchain fees
-  conversion_rate: [BigNumberish, BigNumberish]; // The conversion rate for gas fees, if paid in non-native for chain token
+  max_gas_price: bigint; // The max price per gas, similar semantic like with blockchain fees
+  conversion_rate: [bigint, bigint]; // The conversion rate for gas fees, if paid in non-native for chain token
 }
 
 /**
@@ -118,11 +118,11 @@ export interface OrderFee {
  * Represents information about the state of an order.
  */
 export interface OrderStateInfo {
-  filled_base_amount: BigNumberish; // The filled quantity in the base token.
-  filled_quote_amount: BigNumberish; // The filled quantity in the quote token.
-  cur_number_of_swaps: BigNumberish; // The current number of swaps.
+  filled_base_amount: bigint; // The filled quantity in the base token.
+  filled_quote_amount: bigint; // The filled quantity in the quote token.
+  cur_number_of_swaps: bigint; // The current number of swaps.
   status: OrderStatus; // The status of the order.
-  limit_price: BigNumberish | undefined; // The limit price of the order, if applicable. the price at which it resides as resting order
+  limit_price: bigint | undefined; // The limit price of the order, if applicable. the price at which it resides as resting order
 }
 
 /**
@@ -130,12 +130,12 @@ export interface OrderStateInfo {
  */
 export interface Order {
   maker: Address;
-  price: BigNumberish; // The price of the order. serves as protection price, not fillable if violates that
+  price: bigint; // The price of the order. serves as protection price, not fillable if violates that
   qty: Quantity; // The quantity of the order.
   ticker: TradedPair;
   fee: OrderFee;
   constraints: Constraints;
-  salt: BigNumberish;
+  salt: bigint;
   flags: OrderFlags;
   version: number; // The version of the order
   // get side(): Side {
@@ -161,7 +161,7 @@ export interface ReducedOrder {
   maker: Address;
   hash: string;
   state: OrderStateInfo;
-  price: BigNumberish;
+  price: bigint;
   ticker: TradedPair;
   qty: Quantity;
   order_flags: OrderFlags;
@@ -175,7 +175,7 @@ export interface ReducedOrder {
 export interface CancelRequest {
   maker: Address;
   order_hash: string | null;
-  salt: BigNumberish;
+  salt: bigint;
 }
 
 /**
@@ -185,7 +185,7 @@ export interface IncreaseNonce {
   maker: Address;
   new_nonce: number;
   gas_fee: GasFee;
-  salt: BigNumberish;
+  salt: bigint;
 }
 
 /**
@@ -194,8 +194,8 @@ export interface IncreaseNonce {
 export interface Withdraw {
   maker: Address;
   token: ERC20Token;
-  amount: BigNumberish;
-  salt: BigNumberish;
+  amount: bigint;
+  salt: bigint;
   gas_fee: GasFee;
   receiver: Address;
 }

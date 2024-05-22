@@ -1,7 +1,7 @@
 import { Address } from "@/types.ts";
-import { BigNumberish, ethers } from "ethers";
+import { BigNumberish, ethers, toUtf8Bytes } from "ethers";
 import { SignData, NetworkIssueCode } from "./types.ts";
-import { stall } from "./utils.ts";
+import { bigIntReplacer, convertToBigintRecursively, stall } from "./utils.ts";
 import {
   CancelRequest,
   ERC20Token,
@@ -67,6 +67,8 @@ export class LayerAkiraHttpAPI {
   ): Promise<Result<SignData>> {
     return await this.get<Result<SignData>>(
       `/sign/request_sign_data?user=${signer}&account=${account}`,
+      undefined,
+      true,
     );
   }
 
@@ -85,12 +87,17 @@ export class LayerAkiraHttpAPI {
     msg: BigNumberish,
     signature: [string, string],
   ): Promise<Result<string>> {
-    return await this.post("/sign/auth", { msg: msg, signature: signature });
+    return await this.post(
+      "/sign/auth",
+      { msg: msg, signature: signature },
+      false,
+    );
   }
 
   public getTradingAccount(): Address | undefined {
     return this.tradingAccount;
   }
+
   public getSigner(): Address | undefined {
     return this.signer;
   }
@@ -113,7 +120,7 @@ export class LayerAkiraHttpAPI {
    * which would require onchain fingerprint
    * @returns A Promise that resolves with the gas price result
    */
-  public async queryGasPrice(): Promise<Result<BigNumberish>> {
+  public async queryGasPrice(): Promise<Result<bigint>> {
     return await this.get("/gas/price");
   }
 
@@ -164,7 +171,7 @@ export class LayerAkiraHttpAPI {
    * @returns A Promise that resolves with the result of listen token
    */
   public async getListenKey(): Promise<Result<string>> {
-    return await this.get("/user/listen_key");
+    return await this.get("/user/listen_key", undefined, false);
   }
 
   /**
@@ -177,11 +184,16 @@ export class LayerAkiraHttpAPI {
     order_hash: string,
     mode: number = 1,
   ): Promise<Result<ExtendedOrder | ReducedOrder>> {
-    return await this.get<Result<ExtendedOrder | ReducedOrder>>("/user/order", {
-      mode,
-      trading_account: this.tradingAccount,
-      order_hash,
-    });
+    return await this.get<Result<ExtendedOrder | ReducedOrder>>(
+      "/user/order",
+      {
+        mode,
+        trading_account: this.tradingAccount,
+        order_hash,
+      },
+      true,
+      ["maker", "router_signer"],
+    );
   }
 
   /**
@@ -196,12 +208,17 @@ export class LayerAkiraHttpAPI {
     limit = 20,
     offset = 0,
   ): Promise<Result<ExtendedOrder[] | ReducedOrder[]>> {
-    return await this.get("/user/orders", {
-      mode,
-      trading_account: this.tradingAccount,
-      limit,
-      offset,
-    });
+    return await this.get(
+      "/user/orders",
+      {
+        mode,
+        trading_account: this.tradingAccount,
+        limit,
+        offset,
+      },
+      true,
+      ["maker", "router_signer"],
+    );
   }
 
   // finish that endpoints
@@ -211,7 +228,7 @@ export class LayerAkiraHttpAPI {
     req: CancelRequest,
     sign: [string, string],
   ): Promise<Result<string>> {
-    return await this.post("/cancel_order", { ...req, sign });
+    return await this.post("/cancel_order", { ...req, sign }, false);
   }
 
   /**
@@ -225,12 +242,16 @@ export class LayerAkiraHttpAPI {
     req: CancelRequest,
     sign: [string, string],
   ): Promise<Result<string>> {
-    return await this.post("/cancel_all", {
-      maker: req.maker,
-      sign: sign,
-      order_hash: 0,
-      salt: req.salt,
-    });
+    return await this.post(
+      "/cancel_all",
+      {
+        maker: req.maker,
+        sign: sign,
+        order_hash: 0,
+        salt: req.salt,
+      },
+      false,
+    );
   }
 
   /**
@@ -254,7 +275,7 @@ export class LayerAkiraHttpAPI {
         fee_token: this.erc20ToAddress[gas_fee.fee_token],
       },
     };
-    return await this.post("/withdraw", requestBody);
+    return await this.post("/withdraw", requestBody, false);
   }
 
   /**
@@ -275,7 +296,7 @@ export class LayerAkiraHttpAPI {
         fee_token: this.erc20ToAddress[req.gas_fee.fee_token],
       },
     };
-    return await this.post("/increase_nonce", requestBody);
+    return await this.post("/increase_nonce", requestBody, false);
   }
 
   /**
@@ -306,7 +327,7 @@ export class LayerAkiraHttpAPI {
         },
       },
     };
-    return await this.post("/place_order", requestBody);
+    return await this.post("/place_order", requestBody, false);
   }
 
   public async getUserInfo(): Promise<Result<UserInfo>> {
@@ -324,28 +345,39 @@ export class LayerAkiraHttpAPI {
    * Generic fetch method for any API endpoint
    * @param apiPath Path to URL endpoint under API
    * @param query URL query params. Will be used to create a URLSearchParams object.
+   * @param applyParseInt apply casting of integers in hex format and '\d+' to bigint
+   * @param exclusionFields which fields should be omitted for casting
    * @returns @typeParam T The response from the API.
    */
-  public async get<T>(apiPath: string, query: object = {}): Promise<T> {
+  public async get<T>(
+    apiPath: string,
+    query: object = {},
+    applyParseInt = true,
+    exclusionFields: string[] = [],
+  ): Promise<T> {
     const qs = this.objectToSearchParams(query);
     const url = `${this.apiBaseUrl}${apiPath}${qs.length > 0 ? "?" + qs : qs}`;
-    return await this._fetch(url);
+    return await this._fetch(url, applyParseInt, exclusionFields);
   }
 
   /**
    * Generic post method for any API endpoint.
    * @param apiPath Path to URL endpoint under API
    * @param body Data to send.
+   * @param applyParseInt
+   * @param exclusionFields
    * @param opts ethers ConnectionInfo, similar to Fetch API.
    * @returns @typeParam T The response from the API.
    */
   public async post<T>(
     apiPath: string,
-    body?: object,
+    body: object,
+    applyParseInt = true,
+    exclusionFields: string[] = [],
     opts?: object,
   ): Promise<T> {
     const url = `${this.apiBaseUrl}${apiPath}`;
-    return await this._fetch(url, opts, body);
+    return await this._fetch(url, applyParseInt, exclusionFields, opts, body);
   }
 
   private objectToSearchParams(params: object = {}) {
@@ -362,7 +394,13 @@ export class LayerAkiraHttpAPI {
     return urlSearchParams.toString();
   }
 
-  private async _fetch(url: string, headers?: object, body?: object) {
+  private async _fetch(
+    url: string,
+    applyParseInt = true,
+    exclusionFields: string[] = [],
+    headers?: object,
+    body?: object,
+  ) {
     const req = new ethers.FetchRequest(url);
     // Set the headers
     headers = {
@@ -373,7 +411,8 @@ export class LayerAkiraHttpAPI {
       req.setHeader(key, value);
     }
     if (body) {
-      req.body = body;
+      req.body = toUtf8Bytes(JSON.stringify(body, bigIntReplacer));
+      req.setHeader("content-type", "application/json");
     }
     req.timeout = this.timeoutMullis;
     req.retryFunc = async (_req, resp, attempt) => {
@@ -402,7 +441,9 @@ export class LayerAkiraHttpAPI {
           return { code: response.statusCode, message: response.bodyText };
         }
       }
-      return response.bodyJson;
+      return applyParseInt
+        ? convertToBigintRecursively(response.bodyJson, exclusionFields)
+        : response.bodyJson;
     } catch (e: any) {
       return { code: NetworkIssueCode, exception: e };
     }

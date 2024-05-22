@@ -1,4 +1,3 @@
-import { BigNumberish } from "ethers";
 import { ERC20Token, OrderStatus, TradedPair } from "@/request_types.ts";
 import { Address } from "@/types.ts";
 
@@ -16,8 +15,8 @@ export interface Result<T> {
  * Represents a level in the order book.
  */
 export interface TableLevel {
-  price: BigNumberish; // The price of the level in raw format
-  volume: BigNumberish; // The volume at this level, in quote asset.
+  price: bigint; // The price of the level in raw format
+  volume: bigint; // The volume at this level, in quote asset.
   orders: number; // The number of orders at this level.
 }
 
@@ -34,8 +33,8 @@ export interface BBO {
  * Represents the order book table.
  */
 export interface Table {
-  bids: [BigNumberish, BigNumberish, number][]; // Array of bid levels [price, volume, orders].
-  asks: [BigNumberish, BigNumberish, number][]; // Array of ask levels [price, volume, orders].
+  bids: [bigint, bigint, number][]; // Array of bid levels [price, volume, orders].
+  asks: [bigint, bigint, number][]; // Array of ask levels [price, volume, orders].
 }
 
 /**
@@ -51,7 +50,7 @@ export interface Snapshot {
  * Represents an update to the order book table.
  */
 export interface TableUpdate extends Table {
-  msg_id: BigNumberish; // The message ID of the update.
+  msg_id: bigint; // The message ID of the update.
   time: number; // The timestamp when the update was received.
 }
 
@@ -60,15 +59,17 @@ export interface TableUpdate extends Table {
  */
 interface Balance {
   token: ERC20Token; // The ERC20 token.
-  balance: BigNumberish; // The available balance of the token on exchange.
-  locked: BigNumberish; // The locked or reserved balance of the token exchange.
+  balance: bigint; // The available balance of the token on exchange.
+  locked: bigint; // The locked or reserved balance of the token exchange.
 }
+
+export type FeeTuple = [number, number]; // Array of maker and taker fees in percentage basis points.
 
 /**
  * Represents a user's trading fee for a specific traded pair.
  */
 interface UserFee extends TradedPair {
-  fee: [BigNumberish, BigNumberish][]; // Array of maker and taker fees in percentage basis points.
+  fee: FeeTuple[]; // Array of maker and taker fees in percentage basis points.
 }
 
 /**
@@ -86,11 +87,11 @@ export interface UserInfo {
 export interface ExecutionReport {
   client: Address; // maker of order
   pair: TradedPair; // The traded pair associated with the execution.
-  fill_price: BigNumberish; // The price at which the order was filled.
-  fill_base_qty: BigNumberish; // The filled quantity in the base token.
-  fill_quote_qty: BigNumberish; // The filled quantity in the quote token.
-  acc_base_qty: BigNumberish; // The accumulated filled quantity in the base token.
-  acc_quote_qty: BigNumberish; // The accumulated filled quantity in the quote token.
+  fill_price: bigint; // The price at which the order was filled.
+  fill_base_qty: bigint; // The filled quantity in the base token.
+  fill_quote_qty: bigint; // The filled quantity in the quote token.
+  acc_base_qty: bigint; // The accumulated filled quantity in the base token.
+  acc_quote_qty: bigint; // The accumulated filled quantity in the quote token.
   hash: string; // The order hash.
   is_sell_side: boolean; // Indicates whether the order was on the sell side.
   status: OrderStatus; // The status of the order.
@@ -100,9 +101,9 @@ export interface ExecutionReport {
  * Represents a trade.
  */
 export interface Trade {
-  price: BigNumberish; // The price at which the trade occurred.
-  base_qty: BigNumberish; // The quantity of the base currency involved in the trade.
-  quote_qty: BigNumberish; // The quantity of the quote currency involved in the trade.
+  price: bigint; // The price at which the trade occurred.
+  base_qty: bigint; // The quantity of the base currency involved in the trade.
+  quote_qty: bigint; // The quantity of the quote currency involved in the trade.
   is_sell_side: boolean; // Indicates whether the trade was on the sell side.
   time: number; // The timestamp when the trade occurred.
 }
