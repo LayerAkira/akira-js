@@ -5,7 +5,7 @@ export const API_BASE_MAINNET = "http://localhost:4431";
 export const API_BASE_TESTNET = "http://localhost:4431";
 
 export const EXCHANGE_ADDRESS: Address =
-  "0x02b3329b6d574d4089f98f8b3b7db90475646760d1dbdb881fd87e6954193c6e";
+  "0x046dbba96f861e1dfb7084e7b7dfc98ed38a682e43cbcd9a7c4c3876e1495922";
 
 export const NULL_ADDRESS: Address =
   "0x0000000000000000000000000000000000000000000000000000000000000000";

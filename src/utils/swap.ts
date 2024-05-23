@@ -1,5 +1,5 @@
-import {FeeTuple, TableLevel} from "@/response_types.ts";
-import {ERC20Token, FixedFee, GasFee} from "@/request_types.ts";
+import { TableLevel } from "@/response_types.ts";
+import { ERC20Token, FixedFee, GasFee } from "@/request_types.ts";
 
 function ceilDivide(dividend: bigint, divisor: bigint): bigint {
   // Perform division and add 1 to round up if there is any remainder
@@ -153,10 +153,16 @@ export function getOutQuoteForInBase(
  * @param actualGasPrice if specified used for infer fee else would be use upper value specified in gas fee
  * @returns The gas fee amount as a tuple containing the fee token and the calculated fee.
  */
-export function calcSingleTradeGasFee(gasFee:GasFee, actualGasPrice?:bigint): [ERC20Token, bigint] {
-    const gasPrice =  actualGasPrice ??  gasFee.max_gas_price
-    const fee = BigInt(gasFee.gas_per_action) * gasPrice;
-    return [gasFee.fee_token, fee * gasFee.conversion_rate[1] / gasFee.conversion_rate[0]]
+export function calcSingleTradeGasFee(
+  gasFee: GasFee,
+  actualGasPrice?: bigint,
+): [ERC20Token, bigint] {
+  const gasPrice = actualGasPrice ?? gasFee.max_gas_price;
+  const fee = BigInt(gasFee.gas_per_action) * gasPrice;
+  return [
+    gasFee.fee_token,
+    (fee * gasFee.conversion_rate[1]) / gasFee.conversion_rate[0],
+  ];
 }
 
 /**
@@ -166,8 +172,12 @@ export function calcSingleTradeGasFee(gasFee:GasFee, actualGasPrice?:bigint): [E
  * @param asTaker A boolean indicating whether the fee should be calculated as a taker fee.
  * @returns The calculated fixed swap fee.
  */
-export function calcFixedSwapFee(fee:FixedFee, totalAmountReceive:bigint, asTaker:boolean) {
-  const pBips =   BigInt((asTaker) ? fee.taker_pbips : fee.maker_pbips)
-  if (pBips == 0n) return
-  return (totalAmountReceive * pBips - 1n) / BigInt(100 * 100 * 100) + 1n
+export function calcFixedSwapFee(
+  fee: FixedFee,
+  totalAmountReceive: bigint,
+  asTaker: boolean,
+) {
+  const pBips = BigInt(asTaker ? fee.taker_pbips : fee.maker_pbips);
+  if (pBips == 0n) return 0n;
+  return (totalAmountReceive * pBips - 1n) / BigInt(100 * 100 * 100) + 1n;
 }

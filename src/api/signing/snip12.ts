@@ -16,7 +16,7 @@ import { Address } from "@/types.ts";
  * @author Nikita Mishin
  */
 
-type StarknetDomain = {
+export type StarknetDomain = {
   name: string;
   version: string;
   chainId: string;
@@ -160,11 +160,13 @@ const cancelAllOnchainType = {
   ...gasFeeType,
 };
 
-function _prepareGas(gasFee: any, tokenMapping: TokenAddressMap) {
+function _prepareGas(gasFee: any, tokenMapping?: TokenAddressMap) {
   const { conversion_rate, ...restGas } = gasFee;
   return {
     ...restGas,
-    fee_token: tokenMapping[restGas.fee_token],
+    fee_token: tokenMapping
+      ? tokenMapping[restGas.fee_token]
+      : restGas.fee_token,
     max_gas_price: uint256.bnToUint256(restGas.max_gas_price),
     r0: uint256.bnToUint256(conversion_rate[0]),
     r1: uint256.bnToUint256(conversion_rate[1]),
@@ -234,7 +236,7 @@ export function getOrderSignData(
 export function getWithdrawSignData(
   withdraw: Withdraw,
   domain: StarknetDomain,
-  tokenMapping: TokenAddressMap,
+  tokenMapping?: TokenAddressMap,
 ): TypedData {
   return {
     types: withdrawType,
@@ -242,7 +244,7 @@ export function getWithdrawSignData(
     domain: domain,
     message: {
       ...withdraw,
-      token: tokenMapping[withdraw.token],
+      token: tokenMapping ? tokenMapping[withdraw.token] : withdraw.token,
       amount: uint256.bnToUint256(withdraw.amount),
       gas_fee: _prepareGas(withdraw.gas_fee, tokenMapping),
     },

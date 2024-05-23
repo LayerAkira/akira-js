@@ -5,6 +5,7 @@ import * as SDK from "../src";
 import { OrderConstructor } from "../src/utils/OrderConstructor";
 import { TickerFeeMap } from "../src/utils/TickerFeeMap";
 import { OrderSide } from "../src";
+import { WithdrawConstructor } from "../src/utils/WithdrawConstructor";
 
 jest.setTimeout(10000_000); // Disable timeout for all tests in this file
 
@@ -13,13 +14,14 @@ const TESTING_WS = "http://localhost:4432/ws";
 const SN_SEPOLIA: BigNumberish = "0x534e5f5345504f4c4941";
 
 const testAcc = {
-  account_address:
+  accountAddress:
     "0x033e29bc9B537BAe4e370559331E2bf35b434b566f41a64601b37f410f46a580",
   signer: "0x03e56dd52f96df3bc130f7a0b241dfed26b4a280d28a199e1e857f6d8acbb666",
-  private_key: "place own",
+  privateKey:
+    "place own",
 };
 
-const signer = new Signer(testAcc.private_key);
+const signer = new Signer(testAcc.privateKey);
 
 let api: SDK.LayerAkiraHttpAPI; // Declare a variable to store the API instance
 api = new SDK.LayerAkiraHttpAPI(
@@ -29,7 +31,7 @@ api = new SDK.LayerAkiraHttpAPI(
 );
 
 const orderBuilder = new OrderConstructor(
-  testAcc.account_address,
+  testAcc.accountAddress,
   1,
   new TickerFeeMap([1000, 10000]),
   "0x42",
@@ -38,9 +40,16 @@ const orderBuilder = new OrderConstructor(
   "STRK",
 );
 
+const withdrawBuilder = new WithdrawConstructor(
+  testAcc.accountAddress,
+  "0x42",
+  150,
+  "STRK",
+);
+
 describe("auth", () => {
   it("should give data but fails to auth", async () => {
-    let res = await api.getSignData(testAcc.signer, testAcc.account_address);
+    let res = await api.getSignData(testAcc.signer, testAcc.accountAddress);
     expect(res.code).toBeUndefined(),
       expect(res.error).toBeUndefined(),
       expect(res.result).toBeDefined();
@@ -57,19 +66,19 @@ describe("auth", () => {
   });
 
   it("should auth and issue jwt", async () => {
-    let res = await api.getSignData(testAcc.signer, testAcc.account_address);
+    let res = await api.getSignData(testAcc.signer, testAcc.accountAddress);
     let signData = SDK.getTypedDataForJWT(
       res.result!,
       SDK.getDomain(SN_SEPOLIA),
     );
-    let signature = await signer.signMessage(signData, testAcc.account_address);
+    let signature = await signer.signMessage(signData, testAcc.accountAddress);
     let jwtResult = await api.auth(res.result!, castToApiSignature(signature));
     console.log(res);
     expect(jwtResult.result).toBeDefined();
     //TODO: IS it ok practice given we execute tests sequentially?
     api.setCredentials(
       jwtResult.result!,
-      testAcc.account_address,
+      testAcc.accountAddress,
       testAcc.signer,
     );
   });
@@ -152,28 +161,18 @@ describe("query websocket key", () => {
 describe("sign check", () => {
   it("should not fail on sign check withdraw", async () => {
     let gasPriceResult = await api.queryGasPrice();
-    let withdraw: SDK.Withdraw = {
-      maker: testAcc.account_address,
-      token: "STRK",
-      amount: 1000n,
-      salt: 23432423n,
-      gas_fee: {
-        gas_per_action: 150,
-        fee_token: "STRK",
-        max_gas_price: gasPriceResult.result!,
-        conversion_rate: [1n, 1n],
-      },
-      receiver: testAcc.account_address,
-    };
+    const withdraw = withdrawBuilder.buildWithdraw(
+      "STRK",
+      1000n,
+      gasPriceResult.result!,
+    );
+
     let typedData = SDK.getWithdrawSignData(
       withdraw,
       SDK.getDomain(SN_SEPOLIA),
       SDK.SEPOLIA_TOKEN_MAPPING,
     );
-    let signature = await signer.signMessage(
-      typedData,
-      testAcc.account_address,
-    );
+    let signature = await signer.signMessage(typedData, testAcc.accountAddress);
     let withdrawRes = await api.withdraw(
       withdraw,
       castToApiSignature(signature),
@@ -198,10 +197,7 @@ describe("sign check", () => {
       SDK.getDomain(SN_SEPOLIA),
       SDK.SEPOLIA_TOKEN_MAPPING,
     );
-    let signature = await signer.signMessage(
-      typedData,
-      testAcc.account_address,
-    );
+    let signature = await signer.signMessage(typedData, testAcc.accountAddress);
     let res = await api.placeOrder(order, castToApiSignature(signature));
     console.log("NICE");
     console.log(res);
@@ -209,7 +205,7 @@ describe("sign check", () => {
 
   it("should not fail on sign check cancel order", async () => {
     let cancel: SDK.CancelRequest = {
-      maker: testAcc.account_address,
+      maker: testAcc.accountAddress,
       order_hash: "1",
       salt: 42n,
     };
@@ -217,17 +213,14 @@ describe("sign check", () => {
       cancel,
       SDK.getDomain(SN_SEPOLIA),
     );
-    let signature = await signer.signMessage(
-      typedData,
-      testAcc.account_address,
-    );
+    let signature = await signer.signMessage(typedData, testAcc.accountAddress);
     let res = await api.cancelOrder(cancel, castToApiSignature(signature));
     console.log(res);
   });
 
   it("should not fail on sign check cancel all orders", async () => {
     let cancel: SDK.CancelRequest = {
-      maker: testAcc.account_address,
+      maker: testAcc.accountAddress,
       order_hash: null,
       salt: 42n,
     };
@@ -235,17 +228,14 @@ describe("sign check", () => {
       cancel,
       SDK.getDomain(SN_SEPOLIA),
     );
-    let signature = await signer.signMessage(
-      typedData,
-      testAcc.account_address,
-    );
+    let signature = await signer.signMessage(typedData, testAcc.accountAddress);
     let res = await api.cancelAll(cancel, castToApiSignature(signature));
     console.log(res);
   });
 
   it("should not fail on sign check cancel all onchain orders", async () => {
     let cancelAll: SDK.IncreaseNonce = {
-      maker: testAcc.account_address,
+      maker: testAcc.accountAddress,
       gas_fee: {
         gas_per_action: 150,
         fee_token: "STRK",
@@ -265,7 +255,7 @@ describe("sign check", () => {
     );
     let signature = await signer.signMessage(
       ttypedData,
-      testAcc.account_address,
+      testAcc.accountAddress,
     );
     let res = await api.increaseNonce(cancelAll, castToApiSignature(signature));
     console.log(res);

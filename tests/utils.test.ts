@@ -1,11 +1,5 @@
+import * as SDK from "../src";
 import { convertToBigintRecursively } from "../src/api/http/utils";
-import { TableLevel } from "../src";
-import {
-  getInBaseForOutQuote,
-  getInQuoteForOutBase,
-  getOutBaseForInQuote,
-  getOutQuoteForInBase,
-} from "../src/utils/swap";
 
 describe("utility functions for parsing JSON", () => {
   it("should cast primitives strings numbers to bigint", async () => {
@@ -43,14 +37,14 @@ describe("utility functions for parsing JSON", () => {
 });
 
 // Ticker ETH/USDT base/quote asset
-const bids: TableLevel[] = [
+const bids: SDK.TableLevel[] = [
   // px in USDT, qty in ETH
   { price: 1000n * 10n ** 6n, volume: 10n ** 18n, orders: 5 },
   { price: 900n * 10n ** 6n, volume: 10n ** 18n - 10n ** 17n, orders: 24 },
   { price: 800n * 10n ** 6n, volume: 7n * 10n ** 17n, orders: 4 },
 ];
 
-const asks: TableLevel[] = [
+const asks: SDK.TableLevel[] = [
   // px in USDT, qty in ETH
   { price: 1000n * 10n ** 6n, volume: 10n ** 18n, orders: 5 },
   { price: 1200n * 10n ** 6n, volume: 10n ** 18n - 10n ** 17n, orders: 24 },
@@ -76,7 +70,7 @@ for (let idx = 0; idx < asks.length; idx++) {
 describe("swap result estimation", () => {
   // # user want to sell on 600 usdt worth of eth, we sweep just 1 lvl
   it("Intent: Sell base token (ETH) for quote (USDT): specify exact(approx) receive amount 600 quote token", () => {
-    let [amountInETH, trades, protectionPrice] = getInBaseForOutQuote(
+    let [amountInETH, trades, protectionPrice] = SDK.getInBaseForOutQuote(
       bids,
       600n * 10n ** 6n,
     );
@@ -87,7 +81,7 @@ describe("swap result estimation", () => {
 
   // #user wants to sell 1900 USDT worth, sweeping just 2 levels
   it("Intent: Sell base token (ETH) for quote (USDT): specify exact(approx) receive amount 1900 quote token", () => {
-    let [amountInETH, trades, protectionPrice] = getInBaseForOutQuote(
+    let [amountInETH, trades, protectionPrice] = SDK.getInBaseForOutQuote(
       bids,
       1900n * 10n ** 6n,
     );
@@ -98,7 +92,7 @@ describe("swap result estimation", () => {
 
   // # user want to buy on 600 usdt, we sweep just 1 lvl
   it("Intent: Sell quote token (USDT) for base (ETH): specify exact(approx) spend 600 quote token", () => {
-    let [amountOutETH, trades, protectionPrice] = getOutBaseForInQuote(
+    let [amountOutETH, trades, protectionPrice] = SDK.getOutBaseForInQuote(
       asks,
       600n * 10n ** 6n,
     );
@@ -108,7 +102,7 @@ describe("swap result estimation", () => {
   });
 
   it("Intent: Buy base token (ETH) for quote (USDT): specify exact receive 0.3 base token", () => {
-    let [amountInUSDT, trades, protectionPrice] = getInQuoteForOutBase(
+    let [amountInUSDT, trades, protectionPrice] = SDK.getInQuoteForOutBase(
       asks,
       3n * 10n ** 17n,
     );
@@ -118,7 +112,7 @@ describe("swap result estimation", () => {
   });
 
   it("Intent: Sell base token (ETH) for quote (USDT): specify exact spend 0.6 base token", () => {
-    let [amountOutUSDT, trades, protectionPrice] = getOutQuoteForInBase(
+    let [amountOutUSDT, trades, protectionPrice] = SDK.getOutQuoteForInBase(
       bids,
       6n * 10n ** 17n,
     );

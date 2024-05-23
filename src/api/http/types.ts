@@ -6,4 +6,9 @@ export type SignData = bigint;
 /**
  * Represent code for the network troubleshoot for Result<T>
  */
-export const NetworkIssueCode = 10001; //
+export const NetworkIssueCode = 10000001; //
+
+/**
+ * Represent code for the internal troubleshoot for Result<T>
+ */
+export const ExceptionIssueCode = 10000002; //

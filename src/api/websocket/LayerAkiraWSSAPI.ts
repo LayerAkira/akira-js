@@ -20,9 +20,7 @@ import {
   normalize,
   sleep,
 } from "@/api/websocket/utils.ts";
-import {
-  convertToBigintRecursively,
-} from "@/api/http/utils.ts";
+import { convertToBigintRecursively } from "@/api/http/utils.ts";
 
 /**
  * Represents a LayerAkira WebSocket API.
