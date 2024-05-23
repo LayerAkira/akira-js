@@ -2,10 +2,6 @@ import { Signer, typedData } from "starknet";
 import { bigIntReplacer, castToApiSignature } from "../src/api/http/utils";
 import { BigNumberish } from "ethers";
 import * as SDK from "../src";
-import { OrderConstructor } from "../src/utils/OrderConstructor";
-import { TickerFeeMap } from "../src/utils/TickerFeeMap";
-import { OrderSide } from "../src";
-import { WithdrawConstructor } from "../src/utils/WithdrawConstructor";
 
 jest.setTimeout(10000_000); // Disable timeout for all tests in this file
 
@@ -17,8 +13,7 @@ const testAcc = {
   accountAddress:
     "0x033e29bc9B537BAe4e370559331E2bf35b434b566f41a64601b37f410f46a580",
   signer: "0x03e56dd52f96df3bc130f7a0b241dfed26b4a280d28a199e1e857f6d8acbb666",
-  privateKey:
-    "place own",
+  privateKey: "place own",
 };
 
 const signer = new Signer(testAcc.privateKey);
@@ -30,17 +25,17 @@ api = new SDK.LayerAkiraHttpAPI(
   (arg) => console.log(arg),
 );
 
-const orderBuilder = new OrderConstructor(
+const orderBuilder = new SDK.OrderConstructor(
   testAcc.accountAddress,
   1,
-  new TickerFeeMap([1000, 10000]),
+  new SDK.TickerFeeMap([1000, 10000]),
   "0x42",
   42,
   4242,
   "STRK",
 );
 
-const withdrawBuilder = new WithdrawConstructor(
+const withdrawBuilder = new SDK.WithdrawConstructor(
   testAcc.accountAddress,
   "0x42",
   150,
@@ -189,7 +184,7 @@ describe("sign check", () => {
         quote_qty: 0n,
         base_asset: 1000000000000000000n,
       },
-      OrderSide.SELL,
+      SDK.OrderSide.SELL,
     );
 
     let typedData = SDK.getOrderSignData(
