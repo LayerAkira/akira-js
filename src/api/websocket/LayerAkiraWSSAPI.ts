@@ -24,20 +24,8 @@ import { convertToBigintRecursively } from "@/api/http/utils.ts";
 
 /**
  * Represents a LayerAkira WebSocket API.
- * The LayerAkiraWSSAPI class provides functionality for subscribing and unsubscribing
- * to events emitted by LayerAkira exchange over websockets.
- * It establishes a WebSocket connection to the specified path and handles reconnection logic if necessary.
- * In case of disconnection:
- *  1) ongoing pending requests would be cancelled
- *  2) subscribers would be notified about disconnection with DISCONNECT event. It is guaranteed that only one event for client would be fired
- *  3) all internal state would be cleared, i.e. user would need to subscribe again once connection established back
- *  4) if shouldReconnect specified in constructor than websockets would automatically reconnect after small cooldown
- *  Notes:
- *      After each N minutes user need to refresh listen key
- *      When connection established we are sending Signer and Listen key which we obtain from httpClient, i.e.
- *      httpClient should have set credentials in order for WSS client to obtain listen key
  */
-interface ILayerAkiraWSSAPI {
+export interface ILayerAkiraWSSAPI {
   /**
    * Establishes a connection to the WebSocket API.
    * @returns A promise that resolves when the connection is terminated
@@ -100,6 +88,18 @@ interface ILayerAkiraWSSAPI {
 
 /**
  * The API class for the LayerAkira SDK.
+ * The LayerAkiraWSSAPI class provides functionality for subscribing and unsubscribing
+ * to events emitted by LayerAkira exchange over websockets.
+ * It establishes a WebSocket connection to the specified path and handles reconnection logic if necessary.
+ * In case of disconnection:
+ *  1) ongoing pending requests would be cancelled
+ *  2) subscribers would be notified about disconnection with DISCONNECT event. It is guaranteed that only one event for client would be fired
+ *  3) all internal state would be cleared, i.e. user would need to subscribe again once connection established back
+ *  4) if shouldReconnect specified in constructor than websockets would automatically reconnect after small cooldown
+ *  Notes:
+ *      After each N minutes user need to refresh listen key
+ *      When connection established we are sending Signer and Listen key which we obtain from httpClient, i.e.
+ *      httpClient should have set credentials in order for WSS client to obtain listen key
  * @category Main Classes
  */
 export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {

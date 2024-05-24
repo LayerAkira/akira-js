@@ -58,7 +58,7 @@ export interface TableUpdate extends Table {
 /**
  * Represents a user's balance of an ERC20 token.
  */
-interface Balance {
+export interface Balance {
   token: ERC20Token; // The ERC20 token.
   balance: bigint; // The available balance of the token on exchange.
   locked: bigint; // The locked or reserved balance of the token exchange.
@@ -69,7 +69,7 @@ export type FeeTuple = [number, number]; // Array of maker and taker fees in per
 /**
  * Represents a user's trading fee for a specific traded pair.
  */
-interface UserFee extends TradedPair {
+export interface UserFee extends TradedPair {
   fee: FeeTuple[]; // Array of maker and taker fees in percentage basis points.
 }
 

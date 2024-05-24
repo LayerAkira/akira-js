@@ -1,5 +1,4 @@
-import { LayerAkiraSDK } from "./sdk";
-
+import { LayerAkiraSDK, SDKConfiguration } from "./sdk";
 /**
  * @example
  * // Example Setup
@@ -11,6 +10,7 @@ export {
   // Main SDK export
   LayerAkiraSDK,
 };
+export type { SDKConfiguration };
 
 export * from "./types.ts";
 export * from "./api/http/types.ts";
@@ -33,5 +33,7 @@ export {
   callContractMethod,
 } from "./api/contract/utils.ts";
 export { LayerAkiraHttpAPI } from "./api/http/LayerAkiraHttpAPI.ts";
+export type { LayerAkiraHttpConfig } from "./api/http/LayerAkiraHttpAPI.ts";
+export { type ILayerAkiraWSSAPI } from "./api/websocket/LayerAkiraWSSAPI.ts";
 export { LayerAkiraWSSAPI } from "./api/websocket/LayerAkiraWSSAPI.ts";
 export { LayerAkiraContract } from "./api/contract/LayerAkiraContract.ts";

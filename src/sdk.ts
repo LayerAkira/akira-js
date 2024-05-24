@@ -4,7 +4,10 @@ import { TokenAddressMap } from "@/request_types.ts";
 import { LayerAkiraContract } from "@/api/contract/LayerAkiraContract.ts";
 import { Abi, RpcProvider } from "starknet";
 
-interface SDKConfiguration {
+/**
+ * Interface representing the configuration for the LayerAkira SDK.
+ */
+export interface SDKConfiguration {
   apiBaseUrl: string;
   wssPath: string;
   tokenMapping: TokenAddressMap; // maps ERC20Token alias to it address in chain
