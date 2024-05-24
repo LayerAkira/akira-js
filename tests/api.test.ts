@@ -86,6 +86,18 @@ describe("query market data info", () => {
     console.log(data);
   });
 
+  it("should query ticker specification", async () => {
+    let data = await api.queryTickerSpecification();
+    expect(data.result).toBeDefined();
+    console.log(data);
+  });
+
+  it("should query steps specification", async () => {
+    let data = await api.queryStepsSpecification();
+    expect(data.result).toBeDefined();
+    console.log(data);
+  });
+
   it("should return bbo", async () => {
     let data = await api.getBBO("ETH", "STRK", false);
     expect(data.result).toBeDefined();

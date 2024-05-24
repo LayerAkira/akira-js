@@ -12,7 +12,14 @@ import {
   TokenAddressMap,
   Withdraw,
 } from "@/request_types.ts";
-import { BBO, Result, Snapshot, UserInfo } from "@/response_types.ts";
+import {
+  BBO,
+  Result,
+  Snapshot,
+  StepsConfiguration,
+  TickerSpecification,
+  UserInfo,
+} from "@/response_types.ts";
 
 export interface LayerAkiraHttpConfig {
   jwt?: string;
@@ -329,11 +336,35 @@ export class LayerAkiraHttpAPI {
     };
     return await this.post("/place_order", requestBody, false);
   }
-
+  /**
+   * Fetches the user information from the API.
+   *
+   * @returns A promise that resolves to a Result object containing the UserInfo.
+   */
   public async getUserInfo(): Promise<Result<UserInfo>> {
     return await this.get("/user/user_info", {
       trading_account: this.tradingAccount,
     });
+  }
+  /**
+   * Queries the steps specification from the API,steps would need to specify gas steps in order
+   *
+   * @returns A promise that resolves to a Result object containing the StepsConfiguration.
+   */
+  public async queryStepsSpecification(): Promise<Result<StepsConfiguration>> {
+    return await this.get("/info/steps_specifications");
+  }
+  /**
+   * Queries the ticker specifications from the API
+   *
+   * @returns A promise that resolves to a Result object containing an array of TickerSpecification.
+   */
+  public async queryTickerSpecification(): Promise<
+    Result<TickerSpecification[]>
+  > {
+    return await this.get<Result<TickerSpecification[]>>(
+      "/info/ticker_specifications",
+    );
   }
 
   public async retrieveOldOrders() {

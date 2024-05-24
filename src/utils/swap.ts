@@ -1,5 +1,5 @@
-import { TableLevel } from "@/response_types.ts";
-import { ERC20Token, FixedFee, GasFee } from "@/request_types.ts";
+import { TableLevel, TickerSpecification } from "@/response_types.ts";
+import { ERC20Token, FixedFee, GasFee, Quantity } from "@/request_types.ts";
 
 function ceilDivide(dividend: bigint, divisor: bigint): bigint {
   // Perform division and add 1 to round up if there is any remainder
@@ -180,4 +180,65 @@ export function calcFixedSwapFee(
   const pBips = BigInt(asTaker ? fee.taker_pbips : fee.maker_pbips);
   if (pBips == 0n) return 0n;
   return (totalAmountReceive * pBips - 1n) / BigInt(100 * 100 * 100) + 1n;
+}
+
+/**
+ * Validates if a quote can be made based on the given price (protection price), quantity, and ticker specification.
+ * @param price - The price/protection price at which the quote is being made.
+ * @param qty - The quantity of the quote.
+ * @param tickerSpec - The specification of the ticker.
+ * @returns A tuple where the first element is a boolean indicating if the quote is valid,
+ *          and the second element is an optional string providing a reason if the quote is not valid.
+ */
+export function validateCanQuote(
+  price: bigint,
+  qty: Quantity,
+  tickerSpec: TickerSpecification,
+): [boolean, string?] {
+  if (qty.base_qty != 0n) {
+    if (qty.base_qty % tickerSpec.rawQuoteQtyIncrement > 0n)
+      return [false, `Min quote increment is ${tickerSpec.rawMinQuoteQty}`];
+    if (qty.base_qty < tickerSpec.rawMinQuoteQty)
+      return [false, `Min quote amount is ${tickerSpec.rawMinQuoteQty}`];
+  }
+  if (qty.base_qty == 0n && qty.quote_qty == 0n)
+    return [false, "Traded amount is zero"];
+  const matchable = getMatchableAmountInBase(
+    price,
+    qty,
+    tickerSpec.rawMinQuoteQty,
+    false,
+  );
+  if (matchable == 0n)
+    return [
+      false,
+      `Matchable amount ${matchable} less than min quote qty ${tickerSpec.rawMinQuoteQty}`,
+    ];
+  if (price % tickerSpec.rawPriceIncrement > 0n)
+    return [
+      false,
+      `price ${price} have incorrect tick for tick ${tickerSpec.rawPriceIncrement}`,
+    ];
+  return [true, undefined];
+}
+
+/**
+ * Calculates the matchable amount in base asset given the price/protection price, quantity, minimum traded quantity, and if both quantities are specified.
+ * @param price - The price at which the matchable amount are being calculated against.
+ * @param qty - The quantity of the trade.
+ * @param minTradedQty - The minimum traded quantity for base amount.
+ * @param bothSpecified - A boolean indicating if both base and quote quantities are specified.
+ * @returns The matchable amount in the base asset.
+ */
+export function getMatchableAmountInBase(
+  price: bigint,
+  qty: Quantity,
+  minTradedQty: bigint,
+  bothSpecified: boolean,
+) {
+  if (qty.quote_qty == 0n) return bothSpecified ? 0n : qty.base_qty;
+  const q =
+    ((qty.base_asset * qty.quote_qty) / price / minTradedQty) * minTradedQty;
+  if (qty.base_qty == 0n) return bothSpecified ? 0n : q;
+  return q < qty.base_qty ? q : qty.base_qty;
 }

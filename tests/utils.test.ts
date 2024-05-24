@@ -121,3 +121,113 @@ describe("swap result estimation", () => {
     expect(1000n * 10n ** 6n).toEqual(protectionPrice);
   });
 });
+
+describe("Trade Validation Functions", () => {
+  const tickerSpec: SDK.TickerSpecification = {
+    ticker: { pair: { base: "ETH", quote: "USDT" }, isEcosystemBook: false },
+    rawPriceIncrement: 10n,
+    rawMinQuoteQty: 1000n,
+    rawQuoteQtyIncrement: 100n,
+  };
+  const baseAsset = 10n ** 18n;
+
+  describe("validateCanQuote", () => {
+    it("should return true for valid quote", () => {
+      const price = 1000n;
+      const qty = { base_qty: 1000n, quote_qty: 1000n, base_asset: baseAsset };
+      const [isValid, reason] = SDK.validateCanQuote(price, qty, tickerSpec);
+      expect(isValid).toBe(true);
+      expect(reason).toBeUndefined();
+    });
+
+    it("should return false for base qty less than min quote qty", () => {
+      const price = 1000n;
+      const qty = { base_qty: 500n, quote_qty: 0n, base_asset: 10n ** 18n };
+      const [isValid, reason] = SDK.validateCanQuote(price, qty, tickerSpec);
+      expect(isValid).toBe(false);
+      expect(reason).toBe("Min quote amount is 1000");
+    });
+
+    it("should return false for zero traded amount", () => {
+      const price = 1000n;
+      const qty = { base_qty: 0n, quote_qty: 0n, base_asset: 10n ** 18n };
+      const [isValid, reason] = SDK.validateCanQuote(price, qty, tickerSpec);
+      expect(isValid).toBe(false);
+      expect(reason).toBe("Traded amount is zero");
+    });
+
+    it("should return false for non-matchable amount", () => {
+      const price = 1n * 10n ** 18n;
+      const qty = { base_qty: 0n, quote_qty: 999n, base_asset: 10n ** 18n };
+      const [isValid, reason] = SDK.validateCanQuote(price, qty, tickerSpec);
+      expect(isValid).toBe(false);
+      expect(reason).toBe("Matchable amount 0 less than min quote qty 1000");
+    });
+
+    it("should return false for incorrect price tick", () => {
+      const price = 1005n;
+      const qty = { base_qty: 1000n, quote_qty: 0n, base_asset: 10n ** 18n };
+      const [isValid, reason] = SDK.validateCanQuote(price, qty, tickerSpec);
+      expect(isValid).toBe(false);
+      expect(reason).toBe("price 1005 have incorrect tick for tick 10");
+    });
+  });
+
+  describe("getMatchableAmountInBase", () => {
+    it("should return correct matchable amount for given price and quantity", () => {
+      const price = 1000n;
+      const qty = { base_qty: 1000n, quote_qty: 1000n, base_asset: 10n ** 18n };
+      const minTradedQty = 100n;
+      const bothSpecified = false;
+      const result = SDK.getMatchableAmountInBase(
+        price,
+        qty,
+        minTradedQty,
+        bothSpecified,
+      );
+      expect(result).toBe(1000n);
+    });
+
+    it("should return zero for zero quote quantity when bothSpecified is true", () => {
+      const price = 1000n;
+      const qty = { base_qty: 0n, quote_qty: 0n, base_asset: 10n ** 18n };
+      const minTradedQty = 100n;
+      const bothSpecified = true;
+      const result = SDK.getMatchableAmountInBase(
+        price,
+        qty,
+        minTradedQty,
+        bothSpecified,
+      );
+      expect(result).toBe(0n);
+    });
+
+    it("should return correct matchable amount when base quantity is zero", () => {
+      const price = 10n ** 18n;
+      const qty = { base_qty: 0n, quote_qty: 1000n, base_asset: 10n ** 18n };
+      const minTradedQty = 100n;
+      const bothSpecified = false;
+      const result = SDK.getMatchableAmountInBase(
+        price,
+        qty,
+        minTradedQty,
+        bothSpecified,
+      );
+      expect(result).toBe((price * qty.quote_qty) / price);
+    });
+
+    it("should return smaller value between base quantity and calculated quote amount", () => {
+      const price = 10n ** 18n;
+      const qty = { base_qty: 2000n, quote_qty: 1000n, base_asset: 10n ** 18n };
+      const minTradedQty = 100n;
+      const bothSpecified = false;
+      const result = SDK.getMatchableAmountInBase(
+        price,
+        qty,
+        minTradedQty,
+        bothSpecified,
+      );
+      expect(result).toBe(1000n);
+    });
+  });
+});

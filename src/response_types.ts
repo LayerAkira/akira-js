@@ -1,5 +1,6 @@
 import { ERC20Token, OrderStatus, TradedPair } from "@/request_types.ts";
 import { Address } from "@/types.ts";
+import { ExchangeTicker } from "@/api";
 
 /**
  * Represents the result of an operation.
@@ -106,4 +107,36 @@ export interface Trade {
   quote_qty: bigint; // The quantity of the quote currency involved in the trade.
   is_sell_side: boolean; // Indicates whether the trade was on the sell side.
   time: number; // The timestamp when the trade occurred.
+}
+
+/**
+ * Interface representing the configuration for number of steps each rollup action would require
+ */
+export interface StepsConfiguration {
+  withdraw: { steps: number };
+  swapRouter: { steps: number };
+  swapEcosystem: { steps: number };
+  nonce: { steps: number };
+}
+
+/**
+ * Interface representing the specification for an exchange ticker.
+ */
+export interface TickerSpecification {
+  /**
+   * The exchange ticker details, eg ETH/USDT, router book
+   */
+  ticker: ExchangeTicker;
+  /**
+   * The raw price increment for the price (min tick for price) e.g.  10**5 (0.1) for USDT in quote asset
+   */
+  rawPriceIncrement: bigint;
+  /**
+   * Minimum amount that can be traded under this market in base asset, 10**15 (0.001) for ETH
+   */
+  rawMinQuoteQty: bigint;
+  /**
+   * Minimal increment in base qty (min tick for qty). for example 10**14 (0.0001) for ETH
+   */
+  rawQuoteQtyIncrement: bigint;
 }
