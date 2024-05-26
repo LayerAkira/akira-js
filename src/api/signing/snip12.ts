@@ -122,6 +122,7 @@ const orderType = {
     { name: "salt", type: "felt" },
     { name: "flags", type: "OrderFlags" },
     { name: "version", type: "felt" },
+    { name: "source", type: "felt" },
   ],
   ...u256Type,
   ...fixedFeeType,

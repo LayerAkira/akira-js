@@ -34,6 +34,10 @@ export interface TradeEvent extends Event {
   is_sell_side: boolean; // Indicates if the trade is on the sell side
   is_failed: boolean; // Indicates if the trade failed
   is_ecosystem_book: boolean; // Indicates if the trade is in the ecosystem book
+  maker_hash: string;
+  taker_hash: string;
+  maker_source: string;
+  taker_source: string;
 }
 
 /**

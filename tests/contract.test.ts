@@ -4,7 +4,7 @@ import { BigNumberish } from "ethers";
 import * as SDK from "../src";
 
 export const TEST_EXCHANGE_ADDRESS: SDK.Address =
-  "0x046dbba96f861e1dfb7084e7b7dfc98ed38a682e43cbcd9a7c4c3876e1495922";
+  "0x07981ea76ca241100a3e1cd4083a15a73a068b6d6a946d36042cbfc9b531baa2";
 const trader =
   "0x033e29bc9B537BAe4e370559331E2bf35b434b566f41a64601b37f410f46a580";
 const SN_SEPOLIA: BigNumberish = "0x534e5f5345504f4c4941";
@@ -21,14 +21,14 @@ beforeAll(async () => {
 
 describe("Layer akira contract", () => {
   it("It should query trade event", async () => {
-    const events = await akira.getTradeEventsFor(trader, 68180, 68180);
+    const events = await akira.getTradeEventsFor(trader, 69198, 69198);
     expect(events.result).toBeDefined();
     expect(events.result!.events.length).toEqual(1);
     console.log(events.result!.events[0]);
   });
 
   it("It should query withdrawal event", async () => {
-    const events = await akira.getWithdrawEventsFor(trader, 68443, 68443);
+    const events = await akira.getWithdrawEventsFor(trader, 69198, 69198);
     expect(events.result).toBeDefined();
     expect(events.result!.events.length).toEqual(1);
     console.log(events.result!.events[0]);
@@ -41,7 +41,7 @@ describe("Layer akira contract", () => {
   });
 
   it("It should query deposit event", async () => {
-    const events = await akira.getDepositEventsFor(trader, 68443, 68445);
+    const events = await akira.getDepositEventsFor(trader, 69198, 69198);
     expect(events.result).toBeDefined();
     expect(events.result!.events.length).toEqual(1);
     console.log(events.result!.events[0]);

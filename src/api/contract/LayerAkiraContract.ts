@@ -13,7 +13,11 @@ import {
 } from "starknet";
 import { ExceptionIssueCode } from "@/api/http/types.ts";
 import { Result } from "@/response_types.ts";
-import { bigintToHex, callContractMethod } from "@/api/contract/utils.ts";
+import {
+  bigintToHex,
+  callContractMethod,
+  hexToAscii,
+} from "@/api/contract/utils.ts";
 import { BigNumberish } from "ethers";
 import {
   DepositEvent,
@@ -194,6 +198,11 @@ export class LayerAkiraContract {
           baseAddress: bigintToHex((evt.ticker as bigint[])[0]),
           quoteAddress: bigintToHex((evt.ticker as bigint[])[1]),
         };
+        evt.maker_hash = bigintToHex(evt.maker_hash as bigint);
+        evt.taker_hash = bigintToHex(evt.taker_hash as bigint);
+        evt.maker_source = hexToAscii(bigintToHex(evt.maker_source as bigint));
+        evt.taker_source = hexToAscii(bigintToHex(evt.taker_source as bigint));
+
         return evt;
       },
       continuationToken,

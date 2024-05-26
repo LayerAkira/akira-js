@@ -138,6 +138,7 @@ export interface Order {
   salt: bigint;
   flags: OrderFlags;
   version: number; // The version of the order
+  source: string; // from where order
   // get side(): Side {
   //     return this.flags.isSellSide ? Side.SELL : Side.BUY;
   // }
@@ -167,6 +168,7 @@ export interface ReducedOrder {
   order_flags: OrderFlags;
   stp: STPMode;
   expiration_time: OrderTimestamp;
+  source: string;
 }
 
 /**

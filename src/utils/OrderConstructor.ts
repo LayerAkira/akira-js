@@ -30,6 +30,7 @@ export class OrderConstructor {
   private readonly ecosystemGasSteps: number;
   private readonly routerGasSteps: number;
   private readonly nativeGasFeeToken: Address;
+  private source: string;
 
   /**
    * Creates an instance of OrderConstructor.
@@ -40,6 +41,7 @@ export class OrderConstructor {
    * @param ecosystemGasSteps The number of gas steps for ecosystem trades.
    * @param routerGasSteps The number of gas steps for router trades.
    * @param nativeGasFeeToken The erc20 gas fee token native one
+   * @param source source of order eg layerakira
    * @param routerFeeMap The map containing router fees (default is an empty map).
    * @param routerSigner The address of the router signer (default is NULL_ADDRESS).
    * @param routerFeeRecipient The address of the router fee recipient (default is NULL_ADDRESS).
@@ -53,6 +55,7 @@ export class OrderConstructor {
     ecosystemGasSteps: number,
     routerGasSteps: number,
     nativeGasFeeToken: ERC20Token,
+    source: string = "layerakira",
     routerFeeMap: TickerFeeMap = new TickerFeeMap([0, 0]),
     routerSigner: Address = NULL_ADDRESS,
     routerFeeRecipient: Address = NULL_ADDRESS,
@@ -69,6 +72,7 @@ export class OrderConstructor {
     this.ecosystemGasSteps = ecosystemGasSteps;
     this.routerGasSteps = routerGasSteps;
     this.nativeGasFeeToken = nativeGasFeeToken;
+    this.source = source;
   }
 
   /**
@@ -243,6 +247,7 @@ export class OrderConstructor {
       salt: generateRandomSalt(),
       ticker: ticker.pair,
       version: this.orderVersion,
+      source: this.source,
     };
   }
 

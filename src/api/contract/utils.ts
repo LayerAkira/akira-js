@@ -60,6 +60,19 @@ export function bigintToHex(value: bigint, length: number = 64): string {
   return "0x" + hexString.padStart(length, "0");
 }
 
+export function hexToAscii(evenHexString: string) {
+  let asciiString = "";
+  let startIndex = 0;
+  while (startIndex < evenHexString.length && evenHexString[startIndex] === "0")
+    startIndex += 2;
+  for (let i = startIndex; i < evenHexString.length; i += 2) {
+    const hexPair = evenHexString.slice(i, i + 2);
+    const asciiChar = String.fromCharCode(parseInt(hexPair, 16));
+    asciiString += asciiChar;
+  }
+  return asciiString;
+}
+
 /**
  * Generates the withdrawal hash for a given withdrawal event and Starknet domain.
  * @param w The withdrawal event for which to generate the hash.
