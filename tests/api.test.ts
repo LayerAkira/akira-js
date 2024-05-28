@@ -25,15 +25,15 @@ api = new SDK.LayerAkiraHttpAPI(
   (arg) => console.log(arg),
 );
 
-const orderBuilder = new SDK.OrderConstructor(
-  testAcc.accountAddress,
-  1,
-  new SDK.TickerFeeMap([1000, 10000]),
-  "0x42",
-  42,
-  4242,
-  "STRK",
-);
+let orderBuilder: SDK.OrderConstructor;
+//   testAcc.accountAddress,
+//   1,
+//   new SDK.TickerFeeMap([1000, 10000]),
+//   "0x42",
+//   42,
+//   4242,
+//   "STRK",
+// );
 
 const withdrawBuilder = new SDK.WithdrawConstructor(
   testAcc.accountAddress,
@@ -96,6 +96,28 @@ describe("query market data info", () => {
     let data = await api.queryStepsSpecification();
     expect(data.result).toBeDefined();
     console.log(data);
+  });
+
+  it("should query router specification", async () => {
+    let data = await api.queryRouterSpecification();
+    expect(data.result).toBeDefined();
+    console.log(data);
+    orderBuilder = new SDK.OrderConstructor(
+      testAcc.accountAddress,
+      1,
+      new SDK.TickerFeeMap([1000, 1000]),
+      data.result!.routerFeeRecipient,
+      42,
+      4242,
+      "STRK",
+      "layerakira",
+      new SDK.TickerFeeMap([
+        data.result!.routerMakerPbips,
+        data.result!.routerTakerPbips,
+      ]),
+      data.result!.routerSigner,
+      data.result!.routerFeeRecipient,
+    );
   });
 
   it("should return bbo", async () => {
@@ -189,7 +211,7 @@ describe("sign check", () => {
 
   it("should not fail on sign check place order", async () => {
     let order = orderBuilder.buildSimpleRestingOrder(
-      { pair: { base: "ETH", quote: "STRK" }, isEcosystemBook: true },
+      { pair: { base: "ETH", quote: "STRK" }, isEcosystemBook: false },
       1000_00000000000000000n,
       {
         base_qty: 100000000000000000n,
@@ -206,7 +228,32 @@ describe("sign check", () => {
     );
     let signature = await signer.signMessage(typedData, testAcc.accountAddress);
     let res = await api.placeOrder(order, castToApiSignature(signature));
-    console.log("NICE");
+    console.log(res);
+  });
+
+  it("should not fail on sign check place router order", async () => {
+    let order = orderBuilder.buildSimpleRouterSwap(
+      { base: "ETH", quote: "STRK" },
+      1000_00000000000000000n,
+      {
+        base_qty: 100000000000000000n,
+        quote_qty: 0n,
+        base_asset: 1000000000000000000n,
+      },
+      10,
+      SDK.OrderSide.SELL,
+      10000n,
+      true,
+      0n,
+    );
+
+    let typedData = SDK.getOrderSignData(
+      order,
+      SDK.getDomain(SN_SEPOLIA),
+      SDK.SEPOLIA_TOKEN_MAPPING,
+    );
+    let signature = await signer.signMessage(typedData, testAcc.accountAddress);
+    let res = await api.placeOrder(order, castToApiSignature(signature));
     console.log(res);
   });
 

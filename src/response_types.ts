@@ -140,3 +140,29 @@ export interface TickerSpecification {
    */
   rawQuoteQtyIncrement: bigint;
 }
+
+/**
+ * Interface that defines the specifications for a router, including fees and addresses related to the router's operation
+ */
+export interface RouterSpecification {
+  /**
+   * The router taker basis points.
+   * This represents the fee in percent of basis points that the client as taker would be charged which goes to router fee recipient
+   */
+  routerTakerPbips: number;
+  /**
+   * The router maker basis points.
+   * This represents the fee in percent of basis points that the client as maker would be charged which goes to router fee recipient
+   */
+  routerMakerPbips: number;
+  /**
+   * The address of the router signer.
+   * This is the address which used for signing order on behalf or router fee recipient
+   */
+  routerSigner: Address;
+  /**
+   * The address of the router fee recipient.
+   * This is the address that will receive the fees collected for routing. Router
+   */
+  routerFeeRecipient: Address;
+}

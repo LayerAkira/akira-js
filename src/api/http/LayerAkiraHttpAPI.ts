@@ -15,6 +15,7 @@ import {
 import {
   BBO,
   Result,
+  RouterSpecification,
   Snapshot,
   StepsConfiguration,
   TickerSpecification,
@@ -362,9 +363,18 @@ export class LayerAkiraHttpAPI {
   public async queryTickerSpecification(): Promise<
     Result<TickerSpecification[]>
   > {
-    return await this.get<Result<TickerSpecification[]>>(
-      "/info/ticker_specifications",
-    );
+    return await this.get("/info/ticker_specifications");
+  }
+
+  /**
+   * Queries the layerakira router specifications from the API
+   *
+   * @returns A promise that resolves to a Result object containing an array of RouterSpecification.
+   */
+  public async queryRouterSpecification(): Promise<
+    Result<RouterSpecification>
+  > {
+    return await this.get("/info/router_details", undefined, false);
   }
 
   public async retrieveOldOrders() {
