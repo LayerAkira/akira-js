@@ -1,4 +1,4 @@
-import { Address } from "@/types.ts";
+import { Address } from "../../types";
 
 /**
  * Represents trade information for an order on the LayerAkira exchange.

@@ -1,5 +1,5 @@
-import { ExchangeTicker } from "@/api";
-import { FeeTuple } from "@/response_types.ts";
+import { ExchangeTicker } from "../api";
+import { FeeTuple } from "../response_types";
 
 /**
  * Represents a map that stores ExchangeTicker objects and their corresponding fee tuples.

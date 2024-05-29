@@ -1,5 +1,4 @@
-import { BigNumberish } from "ethers";
-import { Address, OrderTimestamp } from "./types.ts";
+import { Address, OrderTimestamp } from "./types";
 
 /**
  * Represents all status that order might have on exchange

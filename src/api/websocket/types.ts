@@ -1,4 +1,4 @@
-import { TradedPair } from "@/request_types.ts";
+import { TradedPair } from "../../request_types";
 
 /**
  * Represents an exchange ticker for websocket subscription

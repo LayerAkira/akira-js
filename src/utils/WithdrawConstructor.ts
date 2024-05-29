@@ -1,6 +1,6 @@
-import { Address } from "@/types.ts";
-import { ERC20Token, Withdraw } from "@/request_types.ts";
-import { generateRandomSalt } from "@/utils/utils.ts";
+import { Address } from "../types";
+import { ERC20Token, Withdraw } from "../request_types";
+import { generateRandomSalt } from "./utils";
 
 export class WithdrawConstructor {
   public readonly trader: Address;

@@ -1,4 +1,4 @@
-import { Address } from "@/types.ts";
+import { Address } from "../../types";
 import {
   Abi,
   AbiEnums,
@@ -11,21 +11,17 @@ import {
   num,
   RpcProvider,
 } from "starknet";
-import { ExceptionIssueCode } from "@/api/http/types.ts";
-import { Result } from "@/response_types.ts";
-import {
-  bigintToHex,
-  callContractMethod,
-  hexToAscii,
-} from "@/api/contract/utils.ts";
+import { ExceptionIssueCode } from "../http/types";
+import { Result } from "../../response_types";
+import { bigintToHex, callContractMethod, hexToAscii } from "./utils";
 import { BigNumberish } from "ethers";
 import {
   DepositEvent,
   OrderTradeInfo,
   TradeEvent,
   WithdrawalEvent,
-} from "@/api/contract/types.ts";
-import { depositEvent } from "@/api/contract/abi.ts";
+} from "./types";
+import { depositEvent } from "./abi";
 
 /**
  * Class representing the LayerAkira exchange contract.

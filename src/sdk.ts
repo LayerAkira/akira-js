@@ -1,7 +1,7 @@
-import { LayerAkiraHttpAPI, LayerAkiraWSSAPI } from "@/api";
-import { Address } from "@/types.ts";
-import { TokenAddressMap } from "@/request_types.ts";
-import { LayerAkiraContract } from "@/api/contract/LayerAkiraContract.ts";
+import { LayerAkiraHttpAPI, LayerAkiraWSSAPI } from "./api";
+import { Address } from "./types";
+import { TokenAddressMap } from "./request_types";
+import { LayerAkiraContract } from "./api/contract/LayerAkiraContract";
 import { Abi, RpcProvider } from "starknet";
 
 /**

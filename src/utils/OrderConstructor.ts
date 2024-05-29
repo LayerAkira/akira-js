@@ -1,5 +1,5 @@
-import { Address } from "@/types.ts";
-import { NULL_ADDRESS } from "@/constants.ts";
+import { Address } from "../types";
+import { NULL_ADDRESS } from "../constants";
 import {
   Constraints,
   ERC20Token,
@@ -8,11 +8,11 @@ import {
   Quantity,
   STPMode,
   TradedPair,
-} from "@/request_types.ts";
-import { ExchangeTicker } from "@/api";
-import { getEpochSeconds } from "@/api/websocket/utils.ts";
-import { TickerFeeMap } from "@/utils/TickerFeeMap.ts";
-import { generateRandomSalt } from "@/utils/utils.ts";
+} from "../request_types";
+import { ExchangeTicker } from "../api";
+import { getEpochSeconds } from "../api/websocket/utils";
+import { TickerFeeMap } from "./TickerFeeMap";
+import { generateRandomSalt } from "./utils";
 
 /**
  * Helper class for constructing orders with various configurations.

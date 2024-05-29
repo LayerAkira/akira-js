@@ -1,4 +1,4 @@
-import { LayerAkiraHttpAPI } from "@/api/http/LayerAkiraHttpAPI.ts";
+import { LayerAkiraHttpAPI } from "../http/LayerAkiraHttpAPI";
 import { IMessageEvent, w3cwebsocket as W3CWebSocket } from "websocket";
 import {
   BBO,
@@ -6,21 +6,16 @@ import {
   Result,
   TableUpdate,
   Trade,
-} from "@/response_types.ts";
-import {
-  ExchangeTicker,
-  Job,
-  MinimalEvent,
-  SocketEvent,
-} from "@/api/websocket/types.ts";
+} from "../../response_types";
+import { ExchangeTicker, Job, MinimalEvent, SocketEvent } from "./types";
 import {
   getEpochSeconds,
   getHashCode,
   stringHash,
   normalize,
   sleep,
-} from "@/api/websocket/utils.ts";
-import { convertToBigintRecursively } from "@/api/http/utils.ts";
+} from "./utils";
+import { convertToBigintRecursively } from "../http/utils";
 
 /**
  * Represents a LayerAkira WebSocket API.
@@ -294,6 +289,7 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
 
   public close() {
     this.isClosed = true;
+    this.client?.close();
   }
 
   /**

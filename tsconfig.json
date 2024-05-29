@@ -3,16 +3,19 @@
     "target": "ES2020",
     "sourceMap": true,
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ES2020"],
     "module": "ESNext",
     "skipLibCheck": true,
+    "declaration": true,
+    "outDir": "./dist",
+    "forceConsistentCasingInFileNames": true,
 
     /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
+    "noEmit": false,
     "jsx": "react-jsx",
 
     /* Linting */
@@ -23,12 +26,12 @@
 
     /* shadcn-ui */
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    },
+    //    "paths": {
+    //      "@/*": ["src/*"]
+    //    },
     "esModuleInterop": true
   },
 
   "include": ["src"],
-  "exclude": ["tests/*.spec.ts", "node_modules"]
+  "exclude": ["tests", "node_modules", "docs", ".github"]
 }

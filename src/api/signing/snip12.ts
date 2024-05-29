@@ -5,9 +5,9 @@ import {
   Order,
   TokenAddressMap,
   Withdraw,
-} from "@/request_types.ts";
-import { SignData } from "@/api/http/types.ts";
-import { Address } from "@/types.ts";
+} from "../../request_types";
+import { SignData } from "../http/types";
+import { Address } from "../../types";
 
 /**
  * @fileoverview Provides a set of functions to create typed data for exchange

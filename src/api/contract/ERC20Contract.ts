@@ -1,8 +1,8 @@
-import { Address } from "@/types.ts";
+import { Address } from "../../types";
 import { Abi, Contract, RpcProvider } from "starknet";
 import { BigNumberish } from "ethers";
-import { Result } from "@/response_types.ts";
-import { callContractMethod } from "@/api/contract/utils.ts";
+import { Result } from "../../response_types";
+import { callContractMethod } from "./utils";
 
 /**
  * Represents an ERC20 token contract on the Starknet.

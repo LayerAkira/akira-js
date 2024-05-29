@@ -1,5 +1,5 @@
-import { TableLevel, TickerSpecification } from "@/response_types.ts";
-import { ERC20Token, FixedFee, GasFee, Quantity } from "@/request_types.ts";
+import { TableLevel, TickerSpecification } from "../response_types";
+import { ERC20Token, FixedFee, GasFee, Quantity } from "../request_types";
 
 function ceilDivide(dividend: bigint, divisor: bigint): bigint {
   // Perform division and add 1 to round up if there is any remainder

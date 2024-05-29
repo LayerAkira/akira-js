@@ -1,5 +1,5 @@
 import { BigNumberish, hexlify } from "ethers";
-import { ExchangeTicker, SocketEvent } from "@/api/websocket/types.ts";
+import { ExchangeTicker, SocketEvent } from "./types";
 
 export function sleep(ms: number): Promise<void> {
   return new Promise<void>((resolve) => {

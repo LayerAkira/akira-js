@@ -1,6 +1,6 @@
-import { ERC20Token, OrderStatus, TradedPair } from "@/request_types.ts";
-import { Address } from "@/types.ts";
-import { ExchangeTicker } from "@/api";
+import { ERC20Token, OrderStatus, TradedPair } from "./request_types";
+import { Address } from "./types";
+import { ExchangeTicker } from "./api";
 
 /**
  * Represents the result of an operation.

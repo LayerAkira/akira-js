@@ -322,9 +322,15 @@ function timeout(ms: number): Promise<void> {
 
 describe("websockets", () => {
   it("connect and data consume example", async () => {
-    const wsClient = new SDK.LayerAkiraWSSAPI(TESTING_WS, api, true, (arg) => {
-      console.log(arg);
-    });
+    const wsClient = new SDK.LayerAkiraWSSAPI(
+      TESTING_WS,
+      api,
+      true,
+      (arg) => {
+        console.log(arg);
+      },
+      1000,
+    );
     wsClient.connect();
     await timeout(1000);
 
@@ -360,7 +366,7 @@ describe("websockets", () => {
 
     result = await wsClient.subscribeOnExecReport(handler);
     console.log(result);
-    await timeout(60 * 1000);
+    await timeout(3 * 1000);
 
     console.log(await wsClient.unSubscribeFromExecReport());
     console.log(
@@ -382,6 +388,8 @@ describe("websockets", () => {
       await wsClient.unSubscribeFromMarketData(SDK.SocketEvent.TRADE, ticker),
     );
 
-    await timeout(60 * 1000);
+    await timeout(5 * 1000);
+    wsClient.close();
+    await timeout(2 * 1000);
   });
 });

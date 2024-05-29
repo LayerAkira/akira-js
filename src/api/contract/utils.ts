@@ -1,13 +1,13 @@
-import { Address } from "@/types.ts";
+import { Address } from "../../types";
 import { Abi, Contract, RpcProvider } from "starknet";
-import { NetworkIssueCode } from "@/api/http/types.ts";
-import { Result } from "@/response_types.ts";
-import { WithdrawalEvent } from "@/api/contract/types.ts";
+import { NetworkIssueCode } from "../http/types";
+import { Result } from "../../response_types";
+import { WithdrawalEvent } from "./types";
 import {
   getSignDataHash,
   getWithdrawSignData,
   StarknetDomain,
-} from "@/api/signing/snip12.ts";
+} from "../signing/snip12";
 
 /**
  * Retrieves the ABI of a contract at a specified address.

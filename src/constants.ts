@@ -1,5 +1,5 @@
-import { Address } from "./types.ts";
-import { TokenAddressMap } from "@/request_types.ts";
+import { Address } from "./types";
+import { TokenAddressMap } from "./request_types";
 
 export const NULL_ADDRESS: Address =
   "0x0000000000000000000000000000000000000000000000000000000000000000";

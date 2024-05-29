@@ -1,7 +1,7 @@
-import { Address } from "@/types.ts";
+import { Address } from "../../types";
 import { BigNumberish, ethers, toUtf8Bytes } from "ethers";
-import { SignData, NetworkIssueCode } from "./types.ts";
-import { bigIntReplacer, convertToBigintRecursively, stall } from "./utils.ts";
+import { SignData, NetworkIssueCode } from "./types";
+import { bigIntReplacer, convertToBigintRecursively, stall } from "./utils";
 import {
   CancelRequest,
   ERC20Token,
@@ -11,7 +11,7 @@ import {
   ReducedOrder,
   TokenAddressMap,
   Withdraw,
-} from "@/request_types.ts";
+} from "../../request_types";
 import {
   BBO,
   Result,
@@ -20,7 +20,7 @@ import {
   StepsConfiguration,
   TickerSpecification,
   UserInfo,
-} from "@/response_types.ts";
+} from "../../response_types";
 
 export interface LayerAkiraHttpConfig {
   jwt?: string;
