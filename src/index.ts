@@ -37,3 +37,5 @@ export type { LayerAkiraHttpConfig } from "./api/http/LayerAkiraHttpAPI";
 export { type ILayerAkiraWSSAPI } from "./api/websocket/LayerAkiraWSSAPI";
 export { LayerAkiraWSSAPI } from "./api/websocket/LayerAkiraWSSAPI";
 export { LayerAkiraContract } from "./api/contract/LayerAkiraContract";
+
+export { normalize } from "./api/websocket/utils";

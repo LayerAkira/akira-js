@@ -310,7 +310,7 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
   ): Promise<Result<"OK">> {
     const trySubscribe = async () => {
       let client = this.client;
-      if (client === undefined) {
+      if (client === null) {
         return {
           error: `Ws not ready while do request: ${streamId} for ${data}`,
         };
@@ -442,10 +442,15 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
         return;
       }
 
-      let client = new W3CWebSocket(this.wsPath, undefined, undefined, {
-        Authorization: listenKey.result,
-        Signer: signer?.toString(),
-      });
+      let client = new W3CWebSocket(
+        `${this.wsPath}?listenKey=${listenKey.result}&signer=${signer?.toString()}`,
+        undefined,
+        undefined,
+        {
+          // Authorization: listenKey.result,
+          // Signer: signer?.toString(),
+        },
+      );
 
       client.onopen = () => {
         this.logger(
@@ -523,6 +528,6 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
       this.logger(`Unknown subscription message ${e.data.toString()}`);
       return;
     }
-    await this.subscriptions.get(subscription)!(json);
+    await this.subscriptions.get(subscription)!(json["result"]);
   }
 }

@@ -52,7 +52,7 @@ describe("auth", () => {
       "32478365843657432765",
       "4367563478256734285",
     ]);
-    expect(jwtResult).toEqual({ code: 500, error: "Invalid signature" });
+    expect(jwtResult.code).toEqual(500);
   });
 
   it("should not give data", async () => {

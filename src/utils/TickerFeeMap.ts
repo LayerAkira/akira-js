@@ -7,7 +7,7 @@ import { FeeTuple } from "../response_types";
 export class TickerFeeMap {
   public readonly defaultFee: FeeTuple;
 
-  private map: Map<ExchangeTicker, FeeTuple>;
+  private map: Map<string, FeeTuple>;
 
   /**
    * Creates an instance of TickerFeeMap.
@@ -16,7 +16,9 @@ export class TickerFeeMap {
    */
   constructor(defaultFee: FeeTuple, entries?: [ExchangeTicker, FeeTuple][]) {
     this.defaultFee = defaultFee;
-    this.map = new Map(entries);
+    this.map = new Map(
+      entries?.map(([ticker, fee]) => [JSON.stringify(ticker), fee]),
+    );
   }
 
   /**
@@ -25,7 +27,7 @@ export class TickerFeeMap {
    * @returns The fee tuple associated with the ticker, or the default fee if not found.
    */
   get(ticker: ExchangeTicker): FeeTuple {
-    return this.map.get(ticker) || this.defaultFee;
+    return this.map.get(JSON.stringify(ticker)) || this.defaultFee;
   }
 
   /**
@@ -34,7 +36,7 @@ export class TickerFeeMap {
    * @param fee The fee tuple to set for the ticker.
    */
   set(ticker: ExchangeTicker, fee: FeeTuple): void {
-    this.map.set(ticker, fee);
+    this.map.set(JSON.stringify(ticker), fee);
   }
 
   /**
@@ -43,7 +45,7 @@ export class TickerFeeMap {
    * @returns True if the map contains the ticker, otherwise false.
    */
   has(ticker: ExchangeTicker): boolean {
-    return this.map.has(ticker);
+    return this.map.has(JSON.stringify(ticker));
   }
 
   /**
@@ -69,10 +71,12 @@ export class TickerFeeMap {
     callbackfn: (
       value: FeeTuple,
       key: ExchangeTicker,
-      map: Map<ExchangeTicker, FeeTuple>,
+      map: Map<string, FeeTuple>,
     ) => void,
   ): void {
-    this.map.forEach(callbackfn);
+    this.map.forEach((value, key) =>
+      callbackfn(value, JSON.parse(key), this.map),
+    );
   }
 
   /**
@@ -80,6 +84,9 @@ export class TickerFeeMap {
    * @returns An array containing key-value pairs representing the entries in the map.
    */
   toArray(): [ExchangeTicker, FeeTuple][] {
-    return Array.from(this.map.entries());
+    return Array.from(this.map.entries()).map(([key, value]) => [
+      JSON.parse(key),
+      value,
+    ]);
   }
 }

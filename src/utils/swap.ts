@@ -1,4 +1,4 @@
-import { TableLevel, TickerSpecification } from "../response_types";
+import { Snapshot, TableLevel, TickerSpecification } from "../response_types";
 import { ERC20Token, FixedFee, GasFee, Quantity } from "../request_types";
 
 function ceilDivide(dividend: bigint, divisor: bigint): bigint {
@@ -14,13 +14,13 @@ function ceilDivide(dividend: bigint, divisor: bigint): bigint {
  * @param bookSide List of price levels, total volume at that level, and number of orders.
  * @param remainingFillAmountQuote Remaining amount of quote tokens to be fulfilled.
  * @param baseAsset1Qty Quantity of the base asset representing 1 unit (default is 10^18).
- * @returns Base amount of tokens necessary to run this trade and the approximate number of trades and protection price
+ * @returns Base amount of tokens necessary to run this trade and the approximate number of trades and protection price, and remaining amount of quote tokens
  */
 export function intentQuoteForBaseAsset(
   bookSide: TableLevel[],
   remainingFillAmountQuote: bigint,
   baseAsset1Qty: bigint = 10n ** 18n,
-): [bigint, number, bigint] {
+): [bigint, number, bigint, bigint] {
   let totalReceiveToken = 0n;
   let approxTrades = 0;
   let lastLevel = 0n;
@@ -42,7 +42,12 @@ export function intentQuoteForBaseAsset(
     remainingFillAmountQuote -= volumeInQuoteAsset;
     if (remainingFillAmountQuote <= 0) break;
   }
-  return [totalReceiveToken, approxTrades, lastLevel];
+  return [
+    totalReceiveToken,
+    approxTrades,
+    lastLevel,
+    remainingFillAmountQuote < 0n ? 0n : remainingFillAmountQuote,
+  ];
 }
 
 /**
@@ -51,13 +56,13 @@ export function intentQuoteForBaseAsset(
  * @param bookSide List of tuples containing price, total volume, and number of orders.
  * @param remainingFillAmountEth Remaining amount of base tokens to fulfill.
  * @param baseAssetQty Quantity of the base asset (default is 1).
- * @returns Quote amount of tokens necessary to run this trade and the number of trades that would happen approximately and protection price
+ * @returns Quote amount of tokens necessary to run this trade and the number of trades that would happen approximately and protection price and remaining amount of base tokens
  */
 export function intentBaseForQuoteAsset(
   bookSide: TableLevel[],
   remainingFillAmountEth: bigint,
   baseAssetQty: bigint = 10n ** 18n,
-): [bigint, number, bigint] {
+): [bigint, number, bigint, bigint] {
   let totalReceiveToken = 0n;
   let approxTrades = 0;
   let lastLvl = 0n;
@@ -80,7 +85,12 @@ export function intentBaseForQuoteAsset(
     if (remainingFillAmountEth <= 0) break;
   }
 
-  return [totalReceiveToken, approxTrades, lastLvl];
+  return [
+    totalReceiveToken,
+    approxTrades,
+    lastLvl,
+    remainingFillAmountEth < 0n ? 0n : remainingFillAmountEth,
+  ];
 }
 
 /**
@@ -89,7 +99,7 @@ export function intentBaseForQuoteAsset(
  * @param bids List of bid price levels, total volume at each level, and number of orders.
  * @param quoteAmount Amount of quote tokens to be fulfilled.
  * @param baseAssetQty Quantity of the base asset representing 1 unit (default is 10^18).
- * @returns Base amount of tokens necessary to run this trade, approximate number of trades, and protection price.
+ * @returns Base amount of tokens necessary to run this trade, approximate number of trades, and protection price and remaining  quote
  */
 export function getInBaseForOutQuote(
   bids: TableLevel[],
@@ -105,7 +115,7 @@ export function getInBaseForOutQuote(
  * @param asks List of ask price levels, total volume at each level, and number of orders.
  * @param quoteAmount Amount of quote tokens user spending.
  * @param baseAssetQty Quantity of the base asset representing 1 unit (default is 10^18).
- * @returns Quote amount of tokens necessary to run this trade, approximate number of trades, and protection price.
+ * @returns Quote amount of tokens necessary to run this trade, approximate number of trades, and protection price and remaining quote
  */
 export function getOutBaseForInQuote(
   asks: TableLevel[],
@@ -121,7 +131,7 @@ export function getOutBaseForInQuote(
  * @param asks List of ask price levels, total volume at each level, and number of orders.
  * @param baseAmount Amount of base tokens to be fulfilled.
  * @param baseAssetQty Quantity of the base asset representing 1 unit (default is 10^18).
- * @returns Quote amount of tokens necessary to run this trade, approximate number of trades, and protection price.
+ * @returns Quote amount of tokens necessary to run this trade, approximate number of trades, and protection price and remaining amount of base tokens
  */
 export function getInQuoteForOutBase(
   asks: TableLevel[],
@@ -137,7 +147,7 @@ export function getInQuoteForOutBase(
  * @param bids List of bid price levels, total volume at each level, and number of orders.
  * @param baseAmount Amount of base tokens to be fulfilled.
  * @param baseAssetQty Quantity of the base asset representing 1 unit (default is 10^18).
- * @returns Base amount of tokens necessary to run this trade, approximate number of trades, and protection price.
+ * @returns Base amount of tokens necessary to run this trade, approximate number of trades, and protection price and remaining amount of base tokens
  */
 export function getOutQuoteForInBase(
   bids: TableLevel[],
@@ -168,18 +178,18 @@ export function calcSingleTradeGasFee(
 /**
  * Calculates the fixed swap fee.
  * @param fee The fixed fee object containing fee-related parameters.
- * @param totalAmountReceive The total amount received.
+ * @param totalAmount The total amount received.
  * @param asTaker A boolean indicating whether the fee should be calculated as a taker fee.
  * @returns The calculated fixed swap fee.
  */
 export function calcFixedSwapFee(
   fee: FixedFee,
-  totalAmountReceive: bigint,
+  totalAmount: bigint,
   asTaker: boolean,
 ) {
   const pBips = BigInt(asTaker ? fee.taker_pbips : fee.maker_pbips);
   if (pBips == 0n) return 0n;
-  return (totalAmountReceive * pBips - 1n) / BigInt(100 * 100 * 100) + 1n;
+  return (totalAmount * pBips - 1n) / BigInt(100 * 100 * 100) + 1n;
 }
 
 /**
@@ -228,17 +238,55 @@ export function validateCanQuote(
  * @param qty - The quantity of the trade.
  * @param minTradedQty - The minimum traded quantity for base amount.
  * @param bothSpecified - A boolean indicating if both base and quote quantities are specified.
- * @returns The matchable amount in the base asset.
+ * @param minQuoteIncrease
+ * @returns The matchable amount in the base asset wrt to constraints
  */
 export function getMatchableAmountInBase(
   price: bigint,
   qty: Quantity,
   minTradedQty: bigint,
   bothSpecified: boolean,
+  minQuoteIncrease: bigint = 1n,
 ) {
-  if (qty.quote_qty == 0n) return bothSpecified ? 0n : qty.base_qty;
+  if (qty.quote_qty == 0n) {
+    if (bothSpecified) return 0n;
+    const tradable = (qty.base_qty / minTradedQty) * minTradedQty;
+    const unspent = tradable > 0n ? qty.base_qty - tradable : 0n;
+    return tradable + (unspent / minQuoteIncrease) * minQuoteIncrease;
+  }
+  let baseQty = (qty.base_qty / minTradedQty) * minTradedQty;
+  const unspent = baseQty > 0n ? qty.base_qty - baseQty : 0n;
+  baseQty = baseQty + (unspent / minQuoteIncrease) * minQuoteIncrease;
+
   const q =
     ((qty.base_asset * qty.quote_qty) / price / minTradedQty) * minTradedQty;
-  if (qty.base_qty == 0n) return bothSpecified ? 0n : q;
-  return q < qty.base_qty ? q : qty.base_qty;
+  // const baseInQuote =
+  if (baseQty == 0n) return bothSpecified ? 0n : q;
+  return q < baseQty ? q : baseQty;
+}
+
+/**
+ * Calculate the total available volume for the base asset from the order book levels.
+ * @param { [bigint, bigint, number][] } levels - The levels of the order book (bids or asks).
+ * @returns { bigint } - The total available volume for the base asset.
+ */
+export function calculateTotalBaseVolume(
+  levels: [bigint, bigint, number][],
+): bigint {
+  return levels.reduce((acc: bigint, lvl) => acc + lvl[1], 0n);
+}
+/**
+ * Calculate the total available volume for the quote asset from the order book levels.
+ * @param { [bigint, bigint, number][] } levels - The levels of the order book (bids or asks).
+ * @param { bigint } baseAsset - The base asset unit for normalization (default: 10n ** 18n).
+ * @returns { bigint } - The total available volume for the quote asset.
+ */
+export function calculateTotalQuoteVolume(
+  levels: [bigint, bigint, number][],
+  baseAsset = 10n * 18n,
+): bigint {
+  return levels.reduce(
+    (acc: bigint, lvl) => acc + (lvl[0] * lvl[1]) / baseAsset,
+    0n,
+  );
 }

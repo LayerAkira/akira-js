@@ -171,7 +171,7 @@ export class LayerAkiraContract {
   public async getTradeEventsFor(
     trader: Address,
     fromBlock: number,
-    toBlock: number,
+    toBlock: number | "latest" | "pending",
     isMaker: boolean = false,
     continuationToken?: string,
     chunkSize = 10,
@@ -217,7 +217,7 @@ export class LayerAkiraContract {
   public async getWithdrawEventsFor(
     trader: Address,
     fromBlock: number,
-    toBlock: number,
+    toBlock: number | "latest" | "pending",
     continuationToken?: string,
     chunkSize = 10,
   ): Promise<
@@ -262,7 +262,7 @@ export class LayerAkiraContract {
   public async getDepositEventsFor(
     trader: Address,
     fromBlock: number,
-    toBlock: number,
+    toBlock: number | "latest" | "pending",
     continuationToken?: string,
     chunkSize = 10,
   ): Promise<
@@ -309,7 +309,7 @@ export class LayerAkiraContract {
     eventName: string,
     restKeys: string[][],
     fromBlock: number,
-    toBlock: number,
+    toBlock: number | "latest" | "pending",
     parseEvent: (t: any) => T,
     continuationToken?: string,
     chunkSize = 10,
@@ -324,7 +324,10 @@ export class LayerAkiraContract {
       const result = await this.provider.getEvents({
         address: this.exchangeAddress,
         from_block: { block_number: fromBlock },
-        to_block: { block_number: toBlock },
+        to_block:
+          toBlock == "latest" || toBlock == "pending"
+            ? toBlock
+            : { block_number: toBlock },
         keys: [
           [componentKey],
           [num.toHex(hash.starknetKeccak(eventName))],

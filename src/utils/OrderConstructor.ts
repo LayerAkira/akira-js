@@ -113,6 +113,7 @@ export class OrderConstructor {
       gasPriceInChainToken,
       externalFunds,
       true,
+      true,
       false,
       false,
       false,
@@ -153,6 +154,7 @@ export class OrderConstructor {
       false,
       false,
       true,
+      true,
       false,
       false,
       0n,
@@ -174,6 +176,7 @@ export class OrderConstructor {
    * @param gasPriceInChainToken The gas price in the chain token.
    * @param externalFunds Indicates if external funds are involved.
    * @param isMarketOrder Indicates if the order is a market order.
+   * @param apply_to_receipt_amount
    * @param postOnly Indicates if the order is post-only.
    * @param bestLevelOnly Indicates if only  can be filled on the best level.
    * @param fullFillOnly Indicates if either fulfill happens or order became invalid
@@ -194,6 +197,7 @@ export class OrderConstructor {
     gasPriceInChainToken: bigint,
     externalFunds: boolean,
     isMarketOrder: boolean,
+    apply_to_receipt_amount = true,
     postOnly: boolean = false,
     bestLevelOnly: boolean = false,
     fullFillOnly: boolean = false,
@@ -204,6 +208,8 @@ export class OrderConstructor {
     conversionRate?: [bigint, bigint],
     stp?: STPMode,
   ): Order {
+    console.log(ticker, this.routerFeeMap.get(ticker));
+    console.log(ticker, this.exchangeFeeMap.get(ticker), this.exchangeFeeMap);
     return {
       constraints: this.buildConstraints(
         minReceiveAmount,
@@ -217,11 +223,13 @@ export class OrderConstructor {
           recipient: this.exchangeFeeRecipient,
           maker_pbips: this.exchangeFeeMap.get(ticker)[0],
           taker_pbips: this.exchangeFeeMap.get(ticker)[1],
+          apply_to_receipt_amount: apply_to_receipt_amount,
         },
         router_fee: {
           recipient: this.routerFeeRecipient,
           maker_pbips: this.routerFeeMap.get(ticker)[0],
           taker_pbips: this.routerFeeMap.get(ticker)[1],
+          apply_to_receipt_amount: apply_to_receipt_amount,
         },
         gas_fee: {
           gas_per_action: ticker.isEcosystemBook

@@ -70,7 +70,7 @@ export type FeeTuple = [number, number]; // Array of maker and taker fees in per
  * Represents a user's trading fee for a specific traded pair.
  */
 export interface UserFee extends TradedPair {
-  fee: FeeTuple[]; // Array of maker and taker fees in percentage basis points.
+  fee: FeeTuple; // Array of maker and taker fees in percentage basis points.
 }
 
 /**
@@ -82,6 +82,14 @@ export interface UserInfo {
   fees: UserFee[]; // Array of trading fees applicable to the user.
 }
 
+export enum MatchingEngineResult {
+  SLIPPAGE = "SLIPPAGE", // hit slippage while processing taker order (hit protection price)
+  OK = "OK",
+  EXPIRED = "EXPIRED",
+  HIT_SWAPS_LIMIT = " HIT_SWAPS_LIMIT",
+  MIN_RECEIVE_FAILED = "MIN_RECEIVE_FAILED",
+  NOT_ENOUGH_LIQUIDITY = "NOT_ENOUGH_LIQUIDITY",
+}
 /**
  * Represents an execution report for an order.
  */
@@ -96,6 +104,7 @@ export interface ExecutionReport {
   hash: string; // The order hash.
   is_sell_side: boolean; // Indicates whether the order was on the sell side.
   status: OrderStatus; // The status of the order.
+  matcher_result: MatchingEngineResult; // result that yields matching engine
 }
 
 /**
@@ -113,10 +122,10 @@ export interface Trade {
  * Interface representing the configuration for number of steps each rollup action would require
  */
 export interface StepsConfiguration {
-  withdraw: { steps: number };
-  swapRouter: { steps: number };
-  swapEcosystem: { steps: number };
-  nonce: { steps: number };
+  withdraw: number;
+  swapRouter: number;
+  swapEcosystem: number;
+  nonce: number;
 }
 
 /**

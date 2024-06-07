@@ -92,6 +92,7 @@ export interface FixedFee {
   recipient: Address; // The recipient of the fixed fee
   maker_pbips: number; // The maker fee rate in PBIPS (Percentage Basis Points)
   taker_pbips: number; // The taker fee rate in PBIPS (Percentage Basis Points)
+  apply_to_receipt_amount: boolean; // Take fees from spend or receive amount
 }
 
 /**

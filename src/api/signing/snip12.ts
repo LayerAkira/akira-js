@@ -66,6 +66,7 @@ const fixedFeeType = {
     { name: "recipient", type: "felt" },
     { name: "maker_pbips", type: "felt" },
     { name: "taker_pbips", type: "felt" },
+    { name: "apply_to_receipt_amount", type: "bool" },
   ],
 };
 

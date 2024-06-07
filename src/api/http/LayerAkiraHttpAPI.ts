@@ -29,6 +29,8 @@ export interface LayerAkiraHttpConfig {
   apiBaseUrl: string;
 }
 
+const AUTH_HEADER_INVALID_MSG = "Auth header invalid";
+
 /**
  * The API class for the LayerAkira SDK.
  * @category Main Classes
@@ -38,11 +40,13 @@ export class LayerAkiraHttpAPI {
    * Base url for the API
    */
   public readonly apiBaseUrl: string;
+  public isJWTInvalid: boolean = false;
   private readonly erc20ToAddress: TokenAddressMap;
   private jwtToken: string | undefined;
   private tradingAccount: Address | undefined;
   private signer: Address | undefined;
-  private timeoutMullis: number;
+  private timeoutMillis: number;
+
   /**
    * Logger function to use when debugging
    */
@@ -60,7 +64,7 @@ export class LayerAkiraHttpAPI {
     this.tradingAccount = config.tradingAccount;
     this.signer = config.signer;
     this.logger = logger ?? ((arg: string) => arg);
-    this.timeoutMullis = timeoutMillis ?? 10 * 1000;
+    this.timeoutMillis = timeoutMillis ?? 10 * 1000;
   }
 
   /**
@@ -455,7 +459,7 @@ export class LayerAkiraHttpAPI {
       req.body = toUtf8Bytes(JSON.stringify(body, bigIntReplacer));
       req.setHeader("content-type", "application/json");
     }
-    req.timeout = this.timeoutMullis;
+    req.timeout = this.timeoutMillis;
     req.retryFunc = async (_req, resp, attempt) => {
       this.logger(
         `Fetch attempt ${attempt} failed with status ${resp.statusCode}`,
@@ -477,6 +481,8 @@ export class LayerAkiraHttpAPI {
         // If an errors array is returned, throw with the error messages.
         const error = response.bodyJson?.error;
         if (error !== undefined) {
+          this.isJWTInvalid =
+            response.statusCode == 401 && error === AUTH_HEADER_INVALID_MSG;
           return response.bodyJson;
         } else {
           return { code: response.statusCode, message: response.bodyText };

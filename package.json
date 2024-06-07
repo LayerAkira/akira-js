@@ -9,8 +9,7 @@
     "pretest": "tsc",
     "test": "jest --runInBand",
     "prepare": "npm run build",
-    "prepublishOnly": "npm test",
-    "dummy": "tsc tmps/d.ts"
+    "prepublishOnly": "npm test"
   },
   "files": [
     "dist",
@@ -40,7 +39,7 @@
   },
   "dependencies": {
     "@types/websocket": "^1.0.10",
-    "starknet": "^6.8.0",
+    "starknet": "==6.9.0",
     "websocket": "^1.0.35"
   },
   "ts-node": {
