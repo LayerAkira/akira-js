@@ -170,7 +170,7 @@ export class LayerAkiraContract {
    */
   public async getTradeEventsFor(
     trader: Address,
-    fromBlock: number,
+    fromBlock: number | "latest" | "pending",
     toBlock: number | "latest" | "pending",
     isMaker: boolean = false,
     continuationToken?: string,
@@ -216,7 +216,7 @@ export class LayerAkiraContract {
    */
   public async getWithdrawEventsFor(
     trader: Address,
-    fromBlock: number,
+    fromBlock: number | "latest" | "pending",
     toBlock: number | "latest" | "pending",
     continuationToken?: string,
     chunkSize = 10,
@@ -261,7 +261,7 @@ export class LayerAkiraContract {
    */
   public async getDepositEventsFor(
     trader: Address,
-    fromBlock: number,
+    fromBlock: number | "latest" | "pending",
     toBlock: number | "latest" | "pending",
     continuationToken?: string,
     chunkSize = 10,
@@ -308,7 +308,7 @@ export class LayerAkiraContract {
     componentKey: string,
     eventName: string,
     restKeys: string[][],
-    fromBlock: number,
+    fromBlock: number | "latest" | "pending",
     toBlock: number | "latest" | "pending",
     parseEvent: (t: any) => T,
     continuationToken?: string,
@@ -323,7 +323,10 @@ export class LayerAkiraContract {
     try {
       const result = await this.provider.getEvents({
         address: this.exchangeAddress,
-        from_block: { block_number: fromBlock },
+        from_block:
+          fromBlock == "latest" || fromBlock == "pending"
+            ? fromBlock
+            : { block_number: fromBlock },
         to_block:
           toBlock == "latest" || toBlock == "pending"
             ? toBlock
