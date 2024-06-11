@@ -351,6 +351,19 @@ export class LayerAkiraHttpAPI {
       trading_account: this.tradingAccount,
     });
   }
+
+  /**
+   * Fetches suggested conversion rate between tokens in case user need rate for order building
+   *  @param token in what token we want to pay settlement
+   * @returns A promise that resolves to a Result object containing the conversion rate
+   */
+  public async getConversionRate(
+    token: ERC20Token,
+  ): Promise<Result<[bigint, bigint]>> {
+    return await this.get("/info/conversion_rate", {
+      token,
+    });
+  }
   /**
    * Queries the steps specification from the API,steps would need to specify gas steps in order
    *

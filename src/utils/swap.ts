@@ -7,6 +7,9 @@ function ceilDivide(dividend: bigint, divisor: bigint): bigint {
     ? dividend / divisor
     : dividend / divisor + 1n;
 }
+function min(a: bigint, b: bigint): bigint {
+  return a < b ? a : b;
+}
 
 /**
  * Calculate how much base tokens needed to perform the swap given bids/asks book
@@ -14,12 +17,14 @@ function ceilDivide(dividend: bigint, divisor: bigint): bigint {
  * @param bookSide List of price levels, total volume at that level, and number of orders.
  * @param remainingFillAmountQuote Remaining amount of quote tokens to be fulfilled.
  * @param baseAsset1Qty Quantity of the base asset representing 1 unit (default is 10^18).
+ * @param minTradedQty in base asset
  * @returns Base amount of tokens necessary to run this trade and the approximate number of trades and protection price, and remaining amount of quote tokens
  */
 export function intentQuoteForBaseAsset(
   bookSide: TableLevel[],
   remainingFillAmountQuote: bigint,
   baseAsset1Qty: bigint = 10n ** 18n,
+  minTradedQty: bigint = 1n,
 ): [bigint, number, bigint, bigint] {
   let totalReceiveToken = 0n;
   let approxTrades = 0;
@@ -31,9 +36,10 @@ export function intentQuoteForBaseAsset(
       totalReceiveToken += lvl.volume;
       approxTrades += lvl.orders;
     } else {
-      const trades = ceilDivide(
-        BigInt(lvl.orders) * remainingFillAmountQuote,
-        volumeInQuoteAsset,
+      //TODO: real issue how to make good approximation?
+      const trades = min(
+        ceilDivide(lvl.volume, minTradedQty),
+        BigInt(lvl.orders),
       );
       totalReceiveToken +=
         (remainingFillAmountQuote * baseAsset1Qty) / lvl.price;
@@ -56,12 +62,14 @@ export function intentQuoteForBaseAsset(
  * @param bookSide List of tuples containing price, total volume, and number of orders.
  * @param remainingFillAmountEth Remaining amount of base tokens to fulfill.
  * @param baseAssetQty Quantity of the base asset (default is 1).
+ * @param minTradedQty traded amount in base asset
  * @returns Quote amount of tokens necessary to run this trade and the number of trades that would happen approximately and protection price and remaining amount of base tokens
  */
 export function intentBaseForQuoteAsset(
   bookSide: TableLevel[],
   remainingFillAmountEth: bigint,
   baseAssetQty: bigint = 10n ** 18n,
+  minTradedQty: bigint = 1n,
 ): [bigint, number, bigint, bigint] {
   let totalReceiveToken = 0n;
   let approxTrades = 0;
@@ -73,9 +81,10 @@ export function intentBaseForQuoteAsset(
       totalReceiveToken += (lvl.price * lvl.volume) / baseAssetQty;
       approxTrades += lvl.orders;
     } else {
-      const trades = ceilDivide(
-        BigInt(lvl.orders) * remainingFillAmountEth,
-        lvl.volume,
+      //TODO: real issue how to make good approximation?
+      const trades = min(
+        ceilDivide(lvl.volume, minTradedQty),
+        BigInt(lvl.orders),
       );
       totalReceiveToken += (remainingFillAmountEth * lvl.price) / baseAssetQty;
       approxTrades += Number(trades);
@@ -99,14 +108,16 @@ export function intentBaseForQuoteAsset(
  * @param bids List of bid price levels, total volume at each level, and number of orders.
  * @param quoteAmount Amount of quote tokens to be fulfilled.
  * @param baseAssetQty Quantity of the base asset representing 1 unit (default is 10^18).
+ * @param minTradedQty in base asset
  * @returns Base amount of tokens necessary to run this trade, approximate number of trades, and protection price and remaining  quote
  */
 export function getInBaseForOutQuote(
   bids: TableLevel[],
   quoteAmount: bigint,
   baseAssetQty: bigint = 10n ** 18n,
+  minTradedQty: bigint = 1n,
 ) {
-  return intentQuoteForBaseAsset(bids, quoteAmount, baseAssetQty);
+  return intentQuoteForBaseAsset(bids, quoteAmount, baseAssetQty, minTradedQty);
 }
 
 /**
@@ -115,14 +126,16 @@ export function getInBaseForOutQuote(
  * @param asks List of ask price levels, total volume at each level, and number of orders.
  * @param quoteAmount Amount of quote tokens user spending.
  * @param baseAssetQty Quantity of the base asset representing 1 unit (default is 10^18).
+ * @param minTradedQty in base asset
  * @returns Quote amount of tokens necessary to run this trade, approximate number of trades, and protection price and remaining quote
  */
 export function getOutBaseForInQuote(
   asks: TableLevel[],
   quoteAmount: bigint,
   baseAssetQty: bigint = 10n ** 18n,
+  minTradedQty: bigint = 1n,
 ) {
-  return intentQuoteForBaseAsset(asks, quoteAmount, baseAssetQty);
+  return intentQuoteForBaseAsset(asks, quoteAmount, baseAssetQty, minTradedQty);
 }
 
 /**
@@ -131,14 +144,16 @@ export function getOutBaseForInQuote(
  * @param asks List of ask price levels, total volume at each level, and number of orders.
  * @param baseAmount Amount of base tokens to be fulfilled.
  * @param baseAssetQty Quantity of the base asset representing 1 unit (default is 10^18).
+ * @param minTradedQty
  * @returns Quote amount of tokens necessary to run this trade, approximate number of trades, and protection price and remaining amount of base tokens
  */
 export function getInQuoteForOutBase(
   asks: TableLevel[],
   baseAmount: bigint,
   baseAssetQty: bigint = 10n ** 18n,
+  minTradedQty: bigint = 1n,
 ) {
-  return intentBaseForQuoteAsset(asks, baseAmount, baseAssetQty);
+  return intentBaseForQuoteAsset(asks, baseAmount, baseAssetQty, minTradedQty);
 }
 
 /**
@@ -147,14 +162,16 @@ export function getInQuoteForOutBase(
  * @param bids List of bid price levels, total volume at each level, and number of orders.
  * @param baseAmount Amount of base tokens to be fulfilled.
  * @param baseAssetQty Quantity of the base asset representing 1 unit (default is 10^18).
+ * @param minTradedQty
  * @returns Base amount of tokens necessary to run this trade, approximate number of trades, and protection price and remaining amount of base tokens
  */
 export function getOutQuoteForInBase(
   bids: TableLevel[],
   baseAmount: bigint,
   baseAssetQty: bigint = 10n ** 18n,
+  minTradedQty: bigint = 1n,
 ) {
-  return intentBaseForQuoteAsset(bids, baseAmount, baseAssetQty);
+  return intentBaseForQuoteAsset(bids, baseAmount, baseAssetQty, minTradedQty);
 }
 
 /**

@@ -22,14 +22,14 @@ export class OrderConstructor {
   public readonly routerSigner: Address;
   public readonly traderNonce: number;
   public readonly exchangeFeeRecipient: Address;
+  public readonly ecosystemGasSteps: number;
+  public readonly routerGasSteps: number;
+  public readonly nativeGasFeeToken: Address;
 
   private readonly exchangeFeeMap: TickerFeeMap;
   private readonly routerFeeMap: TickerFeeMap;
   private readonly orderVersion: number;
   private readonly routerFeeRecipient: Address;
-  private readonly ecosystemGasSteps: number;
-  private readonly routerGasSteps: number;
-  private readonly nativeGasFeeToken: Address;
   private source: string;
 
   /**
@@ -98,6 +98,8 @@ export class OrderConstructor {
     gasPriceInChainToken: bigint,
     externalFunds: boolean,
     minReceiveAmount: bigint,
+    gasFeeToken?: string,
+    conversionRate?: [bigint, bigint],
     durationValid: number = 365 * 24 * 60 * 60,
     traderNonce?: number,
   ) {
@@ -120,8 +122,8 @@ export class OrderConstructor {
       minReceiveAmount,
       durationValid,
       traderNonce,
-      this.nativeGasFeeToken,
-      [1n, 1n],
+      gasFeeToken,
+      conversionRate,
       STPMode.NONE,
     );
   }
