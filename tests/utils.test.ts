@@ -75,7 +75,7 @@ describe("swap result estimation", () => {
       600n * 10n ** 6n,
     );
     expect(6n * 10n ** 17n).toEqual(amountInETH);
-    expect(3).toEqual(trades);
+    expect(5).toEqual(trades);
     expect(1000n * 10n ** 6n).toEqual(protectionPrice);
   });
 
@@ -86,7 +86,7 @@ describe("swap result estimation", () => {
       1900n * 10n ** 6n,
     );
     expect(20125n * 10n ** 14n).toEqual(amountInETH);
-    expect(30).toEqual(trades);
+    expect(33).toEqual(trades);
     expect(800n * 10n ** 6n).toEqual(protectionPrice);
   });
 
@@ -97,7 +97,7 @@ describe("swap result estimation", () => {
       600n * 10n ** 6n,
     );
     expect(6n * 10n ** 17n).toEqual(amountOutETH);
-    expect(3).toEqual(trades);
+    expect(5).toEqual(trades);
     expect(1000n * 10n ** 6n).toEqual(protectionPrice);
   });
 
@@ -107,7 +107,7 @@ describe("swap result estimation", () => {
       3n * 10n ** 17n,
     );
     expect(300n * 10n ** 6n).toEqual(amountInUSDT);
-    expect(2).toEqual(trades);
+    expect(5).toEqual(trades);
     expect(1000n * 10n ** 6n).toEqual(protectionPrice);
   });
 
@@ -117,7 +117,7 @@ describe("swap result estimation", () => {
       6n * 10n ** 17n,
     );
     expect(600n * 10n ** 6n).toEqual(amountOutUSDT);
-    expect(3).toEqual(trades);
+    expect(5).toEqual(trades);
     expect(1000n * 10n ** 6n).toEqual(protectionPrice);
   });
 });

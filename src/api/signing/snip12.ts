@@ -122,7 +122,7 @@ const orderType = {
     { name: "constraints", type: "Constraints" },
     { name: "salt", type: "felt" },
     { name: "flags", type: "OrderFlags" },
-    { name: "version", type: "felt" },
+    { name: "exchange", type: "felt" },
     { name: "source", type: "felt" },
   ],
   ...u256Type,
@@ -193,11 +193,13 @@ export function getDomain(
  * @param order - order that user wants to sign
  * @param domain - starknet domain where exchange name and version and chain specified
  * @param tokenMapping -  maps ERC20Token to address onchain
+ * @param exchangeAddress - address of LayerAkira exchange
  */
 export function getOrderSignData(
   order: Order,
   domain: StarknetDomain,
   tokenMapping: TokenAddressMap,
+  exchangeAddress: Address,
 ): TypedData {
   const { ticker, ...restOrder } = order;
   return {
@@ -224,6 +226,8 @@ export function getOrderSignData(
           restOrder.constraints.min_receive_amount,
         ),
       },
+      exchange: exchangeAddress,
+      source: order.source,
     },
   };
 }
@@ -234,11 +238,13 @@ export function getOrderSignData(
  * @param withdraw - withdraw that user wants to sign
  * @param domain - starknet domain where exchange name and version and chain specified
  * @param tokenMapping -  maps ERC20Token to address onchain
+ * @param exchangeAddress - address of an LayerAkira exchange
  */
 export function getWithdrawSignData(
   withdraw: Withdraw,
   domain: StarknetDomain,
   tokenMapping?: TokenAddressMap,
+  exchangeAddress?: Address,
 ): TypedData {
   return {
     types: withdrawType,
@@ -249,6 +255,7 @@ export function getWithdrawSignData(
       token: tokenMapping ? tokenMapping[withdraw.token] : withdraw.token,
       amount: uint256.bnToUint256(withdraw.amount),
       gas_fee: _prepareGas(withdraw.gas_fee, tokenMapping),
+      exchange: exchangeAddress,
     },
   };
 }

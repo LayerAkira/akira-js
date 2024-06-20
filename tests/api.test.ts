@@ -8,7 +8,8 @@ jest.setTimeout(10000_000); // Disable timeout for all tests in this file
 const TESTING_BASE_NET = "http://localhost:4431";
 const TESTING_WS = "http://localhost:4432/ws";
 const SN_SEPOLIA: BigNumberish = "0x534e5f5345504f4c4941";
-
+const EXCHANGE_ADDRESS =
+  "0x050cc69a427d0b7f0333d75106fffb69db389bdc750fc92479cf0beeff09a7e3";
 const testAcc = {
   accountAddress:
     "0x033e29bc9B537BAe4e370559331E2bf35b434b566f41a64601b37f410f46a580",
@@ -200,6 +201,7 @@ describe("sign check", () => {
       withdraw,
       SDK.getDomain(SN_SEPOLIA),
       SDK.SEPOLIA_TOKEN_MAPPING,
+      EXCHANGE_ADDRESS,
     );
     let signature = await signer.signMessage(typedData, testAcc.accountAddress);
     let withdrawRes = await api.withdraw(
@@ -225,6 +227,7 @@ describe("sign check", () => {
       order,
       SDK.getDomain(SN_SEPOLIA),
       SDK.SEPOLIA_TOKEN_MAPPING,
+      EXCHANGE_ADDRESS,
     );
     let signature = await signer.signMessage(typedData, testAcc.accountAddress);
     let res = await api.placeOrder(order, castToApiSignature(signature));
@@ -251,6 +254,7 @@ describe("sign check", () => {
       order,
       SDK.getDomain(SN_SEPOLIA),
       SDK.SEPOLIA_TOKEN_MAPPING,
+      EXCHANGE_ADDRESS,
     );
     let signature = await signer.signMessage(typedData, testAcc.accountAddress);
     let res = await api.placeOrder(order, castToApiSignature(signature));

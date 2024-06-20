@@ -89,6 +89,7 @@ export enum MatchingEngineResult {
   HIT_SWAPS_LIMIT = " HIT_SWAPS_LIMIT",
   MIN_RECEIVE_FAILED = "MIN_RECEIVE_FAILED",
   NOT_ENOUGH_LIQUIDITY = "NOT_ENOUGH_LIQUIDITY",
+  GAS_COST = "GAS_COST", // gas higher than settled trades post fees
 }
 /**
  * Represents an execution report for an order.

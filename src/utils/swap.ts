@@ -1,4 +1,4 @@
-import { Snapshot, TableLevel, TickerSpecification } from "../response_types";
+import { TableLevel, TickerSpecification } from "../response_types";
 import { ERC20Token, FixedFee, GasFee, Quantity } from "../request_types";
 
 function ceilDivide(dividend: bigint, divisor: bigint): bigint {

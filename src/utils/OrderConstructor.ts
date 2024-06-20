@@ -28,7 +28,6 @@ export class OrderConstructor {
 
   private readonly exchangeFeeMap: TickerFeeMap;
   private readonly routerFeeMap: TickerFeeMap;
-  private readonly orderVersion: number;
   private readonly routerFeeRecipient: Address;
   private source: string;
 
@@ -45,7 +44,6 @@ export class OrderConstructor {
    * @param routerFeeMap The map containing router fees (default is an empty map).
    * @param routerSigner The address of the router signer (default is NULL_ADDRESS).
    * @param routerFeeRecipient The address of the router fee recipient (default is NULL_ADDRESS).
-   * @param orderVersion The version of the order (default is 0).
    */
   constructor(
     trader: Address,
@@ -59,11 +57,9 @@ export class OrderConstructor {
     routerFeeMap: TickerFeeMap = new TickerFeeMap([0, 0]),
     routerSigner: Address = NULL_ADDRESS,
     routerFeeRecipient: Address = NULL_ADDRESS,
-    orderVersion: number = 0,
   ) {
     this.trader = trader;
     this.routerSigner = routerSigner;
-    this.orderVersion = orderVersion;
     this.traderNonce = traderNonce;
     this.exchangeFeeMap = exchangeFeeMap;
     this.routerFeeMap = routerFeeMap;
@@ -85,6 +81,8 @@ export class OrderConstructor {
    * @param gasPriceInChainToken The gas price in the chain token.
    * @param externalFunds Indicates if funds for the trades are taken externally or from LayerAkira smart contract.
    * @param minReceiveAmount The minimum receive amount for the swap. aka slippage
+   * @param gasFeeToken token in which trader decided to pay for gas
+   * @param conversionRate the rate [base gas, gasFeeToken]
    * @param durationValid The validity duration of the order.
    * @param traderNonce The nonce of the trader (optional). if not specified default from constructor would be used
    * @returns The constructed order.
@@ -256,7 +254,6 @@ export class OrderConstructor {
       qty: qty,
       salt: generateRandomSalt(),
       ticker: ticker.pair,
-      version: this.orderVersion,
       source: this.source,
     };
   }

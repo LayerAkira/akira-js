@@ -137,7 +137,6 @@ export interface Order {
   constraints: Constraints;
   salt: bigint;
   flags: OrderFlags;
-  version: number; // The version of the order
   source: string; // from where order
   // get side(): Side {
   //     return this.flags.isSellSide ? Side.SELL : Side.BUY;
