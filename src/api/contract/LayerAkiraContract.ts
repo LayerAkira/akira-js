@@ -5,6 +5,7 @@ import {
   AbiEvents,
   AbiStructs,
   CallData,
+  CallOptions,
   Contract,
   events,
   hash,
@@ -76,44 +77,57 @@ export class LayerAkiraContract {
    * Fetches the balance of a specific token for a trader on LayerAkira exchange.
    * @param traderAddress The address of the trader.
    * @param tokenAddress The address of the token.
+   * @param callOptions
    * @returns A promise that resolves to the balance of the token for the trader.
    */
   public async balanceOf(
     traderAddress: BigNumberish,
     tokenAddress: BigNumberish,
+    callOptions?: CallOptions,
   ): Promise<Result<bigint>> {
     return await callContractMethod(
       this.contract,
       "balanceOf",
-      traderAddress,
-      tokenAddress,
+      CallData.compile([traderAddress, tokenAddress]),
+      callOptions ?? { blockIdentifier: "pending" },
     );
   }
 
   /**
    * Fetches the nonce for a specific trader on LayerAkira exchange.
    * @param traderAddress The address of the trader.
+   * @param callOptions
    * @returns A promise that resolves to the nonce of the trader.
    */
-  public async nonce(traderAddress: BigNumberish): Promise<Result<bigint>> {
-    return await callContractMethod(this.contract, "get_nonce", traderAddress);
+  public async nonce(
+    traderAddress: BigNumberish,
+    callOptions?: CallOptions,
+  ): Promise<Result<bigint>> {
+    return await callContractMethod(
+      this.contract,
+      "get_nonce",
+      CallData.compile([traderAddress]),
+      callOptions ?? { blockIdentifier: "pending" },
+    );
   }
 
   /**
    * Fetches the balances of specific tokens for a trader on LayerAkira exchange.
    * @param traderAddress The address of the trader.
    * @param tokenAddresses The addresses of the tokens.
+   * @param callOptions
    * @returns A promise that resolves to an array of balances for the tokens.
    */
   public async balancesOf(
     traderAddress: BigNumberish,
     tokenAddresses: BigNumberish[],
+    callOptions?: CallOptions,
   ): Promise<Result<bigint[]>> {
     const result = await callContractMethod(
       this.contract,
       "balancesOf",
-      [traderAddress],
-      tokenAddresses,
+      CallData.compile([[traderAddress], tokenAddresses]),
+      callOptions ?? { blockIdentifier: "pending" },
     );
     if (result.result !== undefined) result.result = result.result[0];
     return result;
@@ -123,10 +137,14 @@ export class LayerAkiraContract {
    * Fetches the native gas fee token address set in LayerAkira contract.
    * @returns A promise that resolves to the address of the native gas fee token.
    */
-  public async nativeGasFeeToken(): Promise<Result<Address>> {
+  public async nativeGasFeeToken(
+    callOptions?: CallOptions,
+  ): Promise<Result<Address>> {
     const result = await callContractMethod(
       this.contract,
       "get_wrapped_native_token",
+      CallData.compile([]),
+      callOptions ?? { blockIdentifier: "pending" },
     );
     if (result.result !== undefined) result.result = bigintToHex(result.result);
     return result;
@@ -136,8 +154,15 @@ export class LayerAkiraContract {
    * Fetches the address of the exchange fee recipient for tradeFee.
    * @returns A promise that resolves to the address of the exchange fee recipient.
    */
-  public async exchangeFeeRecipient(): Promise<Result<Address>> {
-    const result = await callContractMethod(this.contract, "get_fee_recipient");
+  public async exchangeFeeRecipient(
+    callOptions?: CallOptions,
+  ): Promise<Result<Address>> {
+    const result = await callContractMethod(
+      this.contract,
+      "get_fee_recipient",
+      CallData.compile([]),
+      callOptions ?? { blockIdentifier: "pending" },
+    );
     if (result.result !== undefined) result.result = bigintToHex(result.result);
     return result;
   }
@@ -145,15 +170,18 @@ export class LayerAkiraContract {
   /**
    * Fetches trade information (fills) for a specific order hash.
    * @param orderHash The hash of the order.
+   * @param callOptions
    * @returns A promise that resolves to the trade information of the order.
    */
   public async getFillInfo(
     orderHash: BigNumberish,
+    callOptions?: CallOptions,
   ): Promise<Result<OrderTradeInfo>> {
     return await callContractMethod(
       this.contract,
       "get_ecosystem_trade_info",
-      orderHash,
+      CallData.compile([orderHash]),
+      callOptions ?? { blockIdentifier: "pending" },
     );
   }
 

@@ -1,5 +1,11 @@
 import { Address } from "../../types";
-import { Abi, Contract, RpcProvider } from "starknet";
+import {
+  Abi,
+  ArgsOrCalldata,
+  CallOptions,
+  Contract,
+  RpcProvider,
+} from "starknet";
 import { NetworkIssueCode } from "../http/types";
 import { Result } from "../../response_types";
 import { WithdrawalEvent } from "./types";
@@ -32,15 +38,17 @@ export async function getContractAbi(
  * @param contract contract to interact with
  * @param method The name of the method to call.
  * @param args The arguments to pass to the method.
+ * @param callOptions
  * @returns A promise that resolves to the result of the contract method call.
  */
 export async function callContractMethod(
   contract: Contract,
   method: string,
-  ...args: any[]
+  args: ArgsOrCalldata,
+  callOptions?: CallOptions,
 ): Promise<Result<any>> {
   try {
-    const result = await (contract as any)[method](...args);
+    const result = await (contract as any)[method](args, callOptions);
     return { result };
   } catch (e: any) {
     return { code: NetworkIssueCode, exception: e } as Result<any>;
