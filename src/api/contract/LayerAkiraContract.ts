@@ -209,7 +209,7 @@ export class LayerAkiraContract {
       continuationToken?: string;
     }>
   > {
-    return this.getEvents(
+    let tradeEvents = (await this.getEvents(
       this.balancerComponentKey,
       "Trade",
       [isMaker ? [trader] : [], isMaker ? [] : [trader]],
@@ -231,8 +231,17 @@ export class LayerAkiraContract {
       },
       continuationToken,
       chunkSize,
-    );
+    )) as Result<{ events: TradeEvent[]; continuationToken?: string }>;
+    // https://github.com/NethermindEth/juno/issues/1922 due this need additional filtering for false positive
+    if (tradeEvents.result)
+      tradeEvents.result!.events = tradeEvents.result.events.filter(
+        (e) =>
+          (BigInt(e.taker) === BigInt(trader) && !isMaker) ||
+          (BigInt(e.maker) === BigInt(trader) && isMaker),
+      );
+    return tradeEvents;
   }
+
   /**
    * Fetches withdrawal events for a given trader within a specified block range.
    * @param trader The address of the trader to filter events for.
@@ -254,7 +263,7 @@ export class LayerAkiraContract {
       continuationToken?: string;
     }>
   > {
-    return this.getEvents(
+    let events = this.getEvents(
       this.withdrawComponentKey,
       "Withdrawal",
       [[trader]],
@@ -276,11 +285,18 @@ export class LayerAkiraContract {
       },
       continuationToken,
       chunkSize,
-    );
+    ) as Result<{ events: WithdrawalEvent[]; continuationToken?: string }>;
+    if (events.result)
+      events.result!.events = events.result.events.filter(
+        (e) => BigInt(e.maker) === BigInt(trader),
+      );
+
+    return events;
   }
+
   /**
    * Fetches deposit events for a given trader within a specified block range.
-   * @param trader The address of the trader to filter events for.
+   * @param trader The address of the trader to filter events for (funder).
    * @param fromBlock The block number to start fetching events from.
    * @param toBlock The block number to stop fetching events at.
    * @param continuationToken Optional token to continue fetching events from where the last request left off.
@@ -299,7 +315,7 @@ export class LayerAkiraContract {
       continuationToken?: string;
     }>
   > {
-    return this.getEvents(
+    let events = (await this.getEvents(
       this.depositComponentKey,
       "Deposit",
       [[trader]],
@@ -314,7 +330,12 @@ export class LayerAkiraContract {
       continuationToken,
       chunkSize,
       { [num.toHex(hash.starknetKeccak("Deposit"))]: depositEvent },
-    );
+    )) as Result<{ events: DepositEvent[] }>;
+    if (events.result)
+      events.result!.events = events.result.events.filter(
+        (e) => BigInt(e.funder) === BigInt(trader),
+      );
+    return events;
   }
 
   /**

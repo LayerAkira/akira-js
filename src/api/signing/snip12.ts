@@ -148,6 +148,12 @@ const cancelAllType = {
   CancelAllOrders: [
     { name: "maker", type: "felt" },
     { name: "salt", type: "felt" },
+    { name: "ticker", type: "Ticker" },
+  ],
+  Ticker: [
+    { name: "base", type: "felt" },
+    { name: "quote", type: "felt" },
+    { name: "to_ecosystem_book", type: "bool" },
   ],
 };
 
@@ -298,10 +304,12 @@ export function getTypedDataForJWT(
  * @returns order Typed data that user needs to sign
  * @param cancel - cancel request that user wants to sign
  * @param domain - starknet domain where exchange name and version and chain specified
+ * @param tokenMapping
  */
 export function getCancelOrderSignData(
   cancel: CancelRequest,
   domain: StarknetDomain,
+  tokenMapping?: TokenAddressMap,
 ): TypedData {
   return {
     types: cancel.order_hash !== null ? cancelType : cancelAllType,
@@ -310,7 +318,19 @@ export function getCancelOrderSignData(
     message:
       cancel.order_hash !== null
         ? cancel
-        : { maker: cancel.maker, salt: cancel.salt },
+        : {
+            maker: cancel.maker,
+            salt: cancel.salt,
+            ticker: {
+              base: tokenMapping
+                ? tokenMapping[cancel.ticker!.pair.base]
+                : cancel.ticker!.pair.base,
+              quote: tokenMapping
+                ? tokenMapping[cancel.ticker!.pair.quote]
+                : cancel.ticker!.pair.quote,
+              to_ecosystem_book: cancel.ticker?.isEcosystemBook,
+            },
+          },
   };
 }
 

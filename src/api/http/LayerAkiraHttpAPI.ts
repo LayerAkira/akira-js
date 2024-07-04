@@ -1,10 +1,16 @@
 import { Address } from "../../types";
 import { BigNumberish, ethers, toUtf8Bytes } from "ethers";
 import { SignData, NetworkIssueCode } from "./types";
-import { bigIntReplacer, convertToBigintRecursively, stall } from "./utils";
+import {
+  bigIntReplacer,
+  convertFieldsRecursively,
+  convertToBigintRecursively,
+  stall,
+} from "./utils";
 import {
   CancelRequest,
   ERC20Token,
+  ERCToDecimalsMap,
   ExtendedOrder,
   IncreaseNonce,
   Order,
@@ -21,6 +27,11 @@ import {
   TickerSpecification,
   UserInfo,
 } from "../../response_types";
+import {
+  bigIntToFormattedDecimal,
+  formattedDecimalToBigInt,
+  parseTableLvl,
+} from "../utils";
 
 export interface LayerAkiraHttpConfig {
   jwt?: string;
@@ -40,12 +51,13 @@ export class LayerAkiraHttpAPI {
    * Base url for the API
    */
   public readonly apiBaseUrl: string;
+  public readonly erc20ToDecimals: ERCToDecimalsMap;
   public isJWTInvalid: boolean = false;
-  private readonly erc20ToAddress: TokenAddressMap;
   private jwtToken: string | undefined;
   private tradingAccount: Address | undefined;
   private signer: Address | undefined;
   private timeoutMillis: number;
+  private baseFeeToken: ERC20Token;
 
   /**
    * Logger function to use when debugging
@@ -54,17 +66,19 @@ export class LayerAkiraHttpAPI {
 
   constructor(
     config: LayerAkiraHttpConfig,
-    erc20ToAddress: TokenAddressMap,
+    erc20ToDecimals: ERCToDecimalsMap,
+    baseFeeToken: ERC20Token,
     logger?: (arg: string) => void,
     timeoutMillis?: number,
   ) {
     this.apiBaseUrl = config.apiBaseUrl;
-    this.erc20ToAddress = erc20ToAddress;
     this.jwtToken = config.jwt;
     this.tradingAccount = config.tradingAccount;
     this.signer = config.signer;
     this.logger = logger ?? ((arg: string) => arg);
     this.timeoutMillis = timeoutMillis ?? 10 * 1000;
+    this.erc20ToDecimals = erc20ToDecimals;
+    this.baseFeeToken = baseFeeToken;
   }
 
   /**
@@ -148,11 +162,23 @@ export class LayerAkiraHttpAPI {
     quote: ERC20Token,
     to_ecosystem_book: boolean,
   ): Promise<Result<BBO>> {
-    return await this.get("/book/bbo", {
-      base: this.erc20ToAddress[base],
-      quote: this.erc20ToAddress[quote],
-      to_ecosystem_book: +to_ecosystem_book,
-    });
+    return await this.get(
+      "/book/bbo",
+      {
+        base: base,
+        quote: quote,
+        to_ecosystem_book: +to_ecosystem_book,
+      },
+      true,
+      [],
+      (o: any) => {
+        const b = this.erc20ToDecimals[base];
+        const q = this.erc20ToDecimals[quote];
+        if (o.bid) o.bid = parseTableLvl(o.bid, b, q);
+        if (o.ask) o.ask = parseTableLvl(o.ask, b, q);
+        return o;
+      },
+    );
   }
 
   /**
@@ -170,12 +196,34 @@ export class LayerAkiraHttpAPI {
     to_ecosystem_book: boolean,
     levels: number = -1,
   ): Promise<Result<Snapshot>> {
-    return await this.get("/book/snapshot", {
-      base: this.erc20ToAddress[base],
-      quote: this.erc20ToAddress[quote],
-      to_ecosystem_book: +to_ecosystem_book,
-      levels: levels,
-    });
+    return await this.get(
+      "/book/snapshot",
+      {
+        base: base,
+        quote: quote,
+        to_ecosystem_book: +to_ecosystem_book,
+        levels: levels,
+      },
+      true,
+      [],
+      (o: any) => {
+        o.levels.bids = o.levels.bids.map((lst: any) =>
+          parseTableLvl(
+            lst,
+            this.erc20ToDecimals[base],
+            this.erc20ToDecimals[quote],
+          ),
+        );
+        o.levels.asks = o.levels.asks.map((lst: any) =>
+          parseTableLvl(
+            lst,
+            this.erc20ToDecimals[base],
+            this.erc20ToDecimals[quote],
+          ),
+        );
+        return o;
+      },
+    );
   }
 
   /**
@@ -205,6 +253,7 @@ export class LayerAkiraHttpAPI {
       },
       true,
       ["maker", "router_signer"],
+      (o: any) => this.parseOrder(o),
     );
   }
 
@@ -230,17 +279,23 @@ export class LayerAkiraHttpAPI {
       },
       true,
       ["maker", "router_signer"],
+      (o: any) => o.map((e: any) => this.parseOrder(e)),
     );
   }
-
-  // finish that endpoints
-  //  on exchange side update hash
 
   public async cancelOrder(
     req: CancelRequest,
     sign: [string, string],
   ): Promise<Result<string>> {
-    return await this.post("/cancel_order", { ...req, sign }, false);
+    return await this.post(
+      "/cancel_order",
+      {
+        ...req,
+        ticker: { base: "0x0", quote: "0x0", to_ecosystem_book: false },
+        sign,
+      },
+      false,
+    );
   }
 
   /**
@@ -261,6 +316,11 @@ export class LayerAkiraHttpAPI {
         sign: sign,
         order_hash: 0,
         salt: req.salt,
+        ticker: {
+          base: req.ticker!.pair.base,
+          quote: req.ticker!.pair.quote,
+          to_ecosystem_book: req.ticker!.isEcosystemBook,
+        },
       },
       false,
     );
@@ -280,11 +340,26 @@ export class LayerAkiraHttpAPI {
     const { token, gas_fee, ...rest } = req;
     const requestBody = {
       ...rest,
-      token: this.erc20ToAddress[token],
+      token: token,
+      amount: bigIntToFormattedDecimal(req.amount, this.erc20ToDecimals[token]),
       sign,
       gas_fee: {
         ...gas_fee,
-        fee_token: this.erc20ToAddress[gas_fee.fee_token],
+        fee_token: gas_fee.fee_token,
+        max_gas_price: bigIntToFormattedDecimal(
+          req.gas_fee.max_gas_price,
+          this.erc20ToDecimals[this.baseFeeToken],
+        ),
+        conversion_rate: [
+          bigIntToFormattedDecimal(
+            req.gas_fee.conversion_rate[0],
+            this.erc20ToDecimals[this.baseFeeToken],
+          ),
+          bigIntToFormattedDecimal(
+            req.gas_fee.conversion_rate[1],
+            this.erc20ToDecimals[req.gas_fee.fee_token],
+          ),
+        ],
       },
     };
     return await this.post("/withdraw", requestBody, false);
@@ -305,12 +380,27 @@ export class LayerAkiraHttpAPI {
       sign,
       gas_fee: {
         ...req.gas_fee,
-        fee_token: this.erc20ToAddress[req.gas_fee.fee_token],
+        fee_token: req.gas_fee.fee_token,
+        max_gas_price: bigIntToFormattedDecimal(
+          req.gas_fee.max_gas_price,
+          this.erc20ToDecimals[this.baseFeeToken],
+        ),
+        conversion_rate: [
+          bigIntToFormattedDecimal(
+            req.gas_fee.conversion_rate[0],
+            this.erc20ToDecimals[this.baseFeeToken],
+          ),
+          bigIntToFormattedDecimal(
+            req.gas_fee.conversion_rate[1],
+            this.erc20ToDecimals[req.gas_fee.fee_token],
+          ),
+        ],
       },
     };
     return await this.post("/increase_nonce", requestBody, false);
   }
 
+  // TODO from heer
   /**
    * Sending request to exchange to place order
    * req -- specific request that user signs by his private key to authorize action
@@ -323,33 +413,87 @@ export class LayerAkiraHttpAPI {
     sign: [string, string],
     router_sign: [string, string] = ["0", "0"],
   ): Promise<Result<string>> {
+    const minReceive = order.constraints.min_receive_amount;
     const requestBody = {
       ...order,
-      ticker: [
-        this.erc20ToAddress[order.ticker.base],
-        this.erc20ToAddress[order.ticker.quote],
-      ],
+      ticker: [order.ticker.base, order.ticker.quote],
       sign,
       router_sign,
+      price: bigIntToFormattedDecimal(
+        order.price,
+        this.erc20ToDecimals[order.ticker.quote],
+      ),
+      qty: {
+        base_qty: bigIntToFormattedDecimal(
+          order.qty.base_qty,
+          this.erc20ToDecimals[order.ticker.base],
+        ),
+        quote_qty: bigIntToFormattedDecimal(
+          order.qty.quote_qty,
+          this.erc20ToDecimals[order.ticker.quote],
+        ),
+      },
       fee: {
         ...order.fee,
         gas_fee: {
           ...order.fee.gas_fee,
-          fee_token: this.erc20ToAddress[order.fee.gas_fee.fee_token],
+          fee_token: order.fee.gas_fee.fee_token,
+          max_gas_price: bigIntToFormattedDecimal(
+            order.fee.gas_fee.max_gas_price,
+            this.erc20ToDecimals[this.baseFeeToken],
+          ),
+          conversion_rate: [
+            bigIntToFormattedDecimal(
+              order.fee.gas_fee.conversion_rate[0],
+              this.erc20ToDecimals[this.baseFeeToken],
+            ),
+            bigIntToFormattedDecimal(
+              order.fee.gas_fee.conversion_rate[1],
+              this.erc20ToDecimals[order.fee.gas_fee.fee_token],
+            ),
+          ],
         },
+      },
+      constraints: {
+        ...order.constraints,
+        min_receive_amount: bigIntToFormattedDecimal(
+          minReceive,
+          this.erc20ToDecimals[
+            order.flags.is_sell_side ? order.ticker.quote : order.ticker.base
+          ],
+        ),
       },
     };
     return await this.post("/place_order", requestBody, false);
   }
+
   /**
    * Fetches the user information from the API.
    *
    * @returns A promise that resolves to a Result object containing the UserInfo.
    */
   public async getUserInfo(): Promise<Result<UserInfo>> {
-    return await this.get("/user/user_info", {
-      trading_account: this.tradingAccount,
-    });
+    return await this.get(
+      "/user/user_info",
+      {
+        trading_account: this.tradingAccount,
+      },
+      true,
+      [],
+      (o: any) => {
+        o.balances = o.balances.map((e: any) => {
+          return {
+            token: e.token,
+            balance: formattedDecimalToBigInt(
+              e.balance,
+              this.erc20ToDecimals[e.token],
+            ),
+            locked: e.locked[this.erc20ToDecimals[e.token]],
+          };
+        });
+        return o;
+      },
+    );
   }
 
   /**
@@ -360,10 +504,27 @@ export class LayerAkiraHttpAPI {
   public async getConversionRate(
     token: ERC20Token,
   ): Promise<Result<[bigint, bigint]>> {
-    return await this.get("/info/conversion_rate", {
-      token,
-    });
+    console.log("HEY");
+    return await this.get(
+      "/info/conversion_rate",
+      {
+        token,
+      },
+      false,
+      [],
+      (e: any) => {
+        console.log("DAMn");
+        if (e.length == 0) return e;
+        e[0] = formattedDecimalToBigInt(
+          e[0],
+          this.erc20ToDecimals[this.baseFeeToken],
+        );
+        e[1] = formattedDecimalToBigInt(e[1], this.erc20ToDecimals[token]);
+        return e;
+      },
+    );
   }
+
   /**
    * Queries the steps specification from the API,steps would need to specify gas steps in order
    *
@@ -372,6 +533,7 @@ export class LayerAkiraHttpAPI {
   public async queryStepsSpecification(): Promise<Result<StepsConfiguration>> {
     return await this.get("/info/steps_specifications");
   }
+
   /**
    * Queries the ticker specifications from the API
    *
@@ -412,10 +574,18 @@ export class LayerAkiraHttpAPI {
     query: object = {},
     applyParseInt = true,
     exclusionFields: string[] = [],
+    preApplyParser?: (o: any) => any,
   ): Promise<T> {
     const qs = this.objectToSearchParams(query);
     const url = `${this.apiBaseUrl}${apiPath}${qs.length > 0 ? "?" + qs : qs}`;
-    return await this._fetch(url, applyParseInt, exclusionFields);
+    return await this._fetch(
+      url,
+      applyParseInt,
+      exclusionFields,
+      undefined,
+      undefined,
+      preApplyParser,
+    );
   }
 
   /**
@@ -433,9 +603,17 @@ export class LayerAkiraHttpAPI {
     applyParseInt = true,
     exclusionFields: string[] = [],
     opts?: object,
+    preApplyParser?: (o: any) => any,
   ): Promise<T> {
     const url = `${this.apiBaseUrl}${apiPath}`;
-    return await this._fetch(url, applyParseInt, exclusionFields, opts, body);
+    return await this._fetch(
+      url,
+      applyParseInt,
+      exclusionFields,
+      opts,
+      body,
+      preApplyParser,
+    );
   }
 
   private objectToSearchParams(params: object = {}) {
@@ -458,6 +636,7 @@ export class LayerAkiraHttpAPI {
     exclusionFields: string[] = [],
     headers?: object,
     body?: object,
+    preApplyParser?: (o: any) => any,
   ) {
     const req = new ethers.FetchRequest(url);
     // Set the headers
@@ -501,11 +680,36 @@ export class LayerAkiraHttpAPI {
           return { code: response.statusCode, message: response.bodyText };
         }
       }
-      return applyParseInt
-        ? convertToBigintRecursively(response.bodyJson, exclusionFields)
-        : response.bodyJson;
+      if (response.bodyJson.result === undefined) return response.bodyJson;
+      let data = preApplyParser
+        ? preApplyParser(response.bodyJson["result"])
+        : response.bodyJson["result"];
+      return {
+        result: applyParseInt
+          ? convertToBigintRecursively(data, exclusionFields)
+          : data,
+      };
     } catch (e: any) {
       return { code: NetworkIssueCode, exception: e };
     }
+  }
+
+  private parseOrder(o: any) {
+    o = convertFieldsRecursively(
+      o,
+      new Set(["limit_price", "price", "filled_quote_amount", "quote_qty"]),
+      (e) => formattedDecimalToBigInt(e, this.erc20ToDecimals[o.ticker.quote]),
+    );
+    o = convertFieldsRecursively(
+      o,
+      new Set(["filled_base_amount", "base_qty"]),
+      (e) => formattedDecimalToBigInt(e, this.erc20ToDecimals[o.ticker.quote]),
+    );
+    if (o.fee)
+      o.fee.gas_fee.max_gas_price = formattedDecimalToBigInt(
+        o.fee.gas_fee.max_gas_price,
+        this.erc20ToDecimals[this.baseFeeToken],
+      );
+    return o;
   }
 }

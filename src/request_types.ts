@@ -1,4 +1,5 @@
 import { Address, OrderTimestamp } from "./types";
+import { ExchangeTicker } from "./api";
 
 /**
  * Represents all status that order might have on exchange
@@ -177,6 +178,7 @@ export interface CancelRequest {
   maker: Address;
   order_hash: string | null;
   salt: bigint;
+  ticker?: ExchangeTicker;
 }
 
 /**
@@ -206,4 +208,11 @@ export interface Withdraw {
  */
 export type TokenAddressMap = {
   [token: ERC20Token]: string;
+};
+
+/**
+ * Represents a mapping of ERC20 tokens to decimals.
+ */
+export type ERCToDecimalsMap = {
+  [token: ERC20Token]: number;
 };
