@@ -74,7 +74,9 @@ export interface ILayerAkiraWSSAPI {
    * @returns A promise containing the result of the subscription request.
    */
   subscribeOnExecReport(
-    clientCb: (evt: CancelAllReport | ExecutionReport | SocketEvent.DISCONNECT) => Promise<void>,
+    clientCb: (
+      evt: CancelAllReport | ExecutionReport | SocketEvent.DISCONNECT,
+    ) => Promise<void>,
     timeout?: number,
   ): Promise<Result<string>>;
 

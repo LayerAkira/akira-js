@@ -400,7 +400,6 @@ export class LayerAkiraHttpAPI {
     return await this.post("/increase_nonce", requestBody, false);
   }
 
-  // TODO from heer
   /**
    * Sending request to exchange to place order
    * req -- specific request that user signs by his private key to authorize action
