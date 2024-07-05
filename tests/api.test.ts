@@ -6,8 +6,8 @@ import { SEPOLIA_TOKEN_MAPPING } from "../src";
 
 jest.setTimeout(10000_000); // Disable timeout for all tests in this file
 
-const TESTING_BASE_NET = "http://localhost:4431";
-const TESTING_WS = "http://localhost:4432/ws";
+const TESTING_BASE_NET = "http://localhost:4435";
+const TESTING_WS = "http://localhost:4436/ws";
 const SN_SEPOLIA: BigNumberish = "0x534e5f5345504f4c4941";
 const EXCHANGE_ADDRESS =
   "0x050cc69a427d0b7f0333d75106fffb69db389bdc750fc92479cf0beeff09a7e3";
@@ -15,7 +15,7 @@ const testAcc = {
   accountAddress:
     "0x033e29bc9B537BAe4e370559331E2bf35b434b566f41a64601b37f410f46a580",
   signer: "0x03e56dd52f96df3bc130f7a0b241dfed26b4a280d28a199e1e857f6d8acbb666",
-  privateKey: "place own",
+  privateKey: process.env.PRIVATE_KEY,
 };
 
 const signer = new Signer(testAcc.privateKey);
@@ -276,7 +276,10 @@ describe("sign check", () => {
       SDK.getDomain(SN_SEPOLIA),
     );
     let signature = await signer.signMessage(typedData, testAcc.accountAddress);
-    let res = await api.cancelOrder(cancel, castToApiSignature(signature));
+    let res = await api.cancelOrder(
+      cancel,
+      castToApiSignature(signature) as [string, string],
+    );
     console.log(res);
   });
 

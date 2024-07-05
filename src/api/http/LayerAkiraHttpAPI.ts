@@ -15,7 +15,7 @@ import {
   IncreaseNonce,
   Order,
   ReducedOrder,
-  TokenAddressMap,
+  TraderSignature,
   Withdraw,
 } from "../../request_types";
 import {
@@ -111,7 +111,7 @@ export class LayerAkiraHttpAPI {
    */
   public async auth(
     msg: BigNumberish,
-    signature: [string, string],
+    signature: TraderSignature,
   ): Promise<Result<string>> {
     return await this.post(
       "/sign/auth",
@@ -307,7 +307,7 @@ export class LayerAkiraHttpAPI {
    */
   public async cancelAll(
     req: CancelRequest,
-    sign: [string, string],
+    sign: TraderSignature,
   ): Promise<Result<string>> {
     return await this.post(
       "/cancel_all",
@@ -335,7 +335,7 @@ export class LayerAkiraHttpAPI {
    */
   public async withdraw(
     req: Withdraw,
-    sign: [string, string],
+    sign: TraderSignature,
   ): Promise<Result<string>> {
     const { token, gas_fee, ...rest } = req;
     const requestBody = {
@@ -373,7 +373,7 @@ export class LayerAkiraHttpAPI {
    */
   public async increaseNonce(
     req: IncreaseNonce,
-    sign: [string, string],
+    sign: TraderSignature,
   ): Promise<Result<string>> {
     const requestBody = {
       ...req,
@@ -409,7 +409,7 @@ export class LayerAkiraHttpAPI {
    */
   public async placeOrder(
     order: Order,
-    sign: [string, string],
+    sign: TraderSignature,
     router_sign: [string, string] = ["0", "0"],
   ): Promise<Result<string>> {
     const minReceive = order.constraints.min_receive_amount;

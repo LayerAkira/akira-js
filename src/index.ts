@@ -39,3 +39,4 @@ export { LayerAkiraWSSAPI } from "./api/websocket/LayerAkiraWSSAPI";
 export { LayerAkiraContract } from "./api/contract/LayerAkiraContract";
 
 export { normalize } from "./api/websocket/utils";
+export { castToApiSignature } from "./api";

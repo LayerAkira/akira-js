@@ -37,6 +37,8 @@ export enum OrderSide {
   SELL = 1,
 }
 
+export type TraderSignature = [string, string] | string[];
+
 export enum OrderType {
   LIMIT = 0,
   MARKET = 1,

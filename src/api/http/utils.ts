@@ -8,7 +8,8 @@ export function stall(duration: number): Promise<void> {
   });
 }
 
-export function castToApiSignature(s: Signature): [string, string] {
+export function castToApiSignature(s: Signature): [string, string] | string[] {
+  if (Array.isArray(s)) return s;
   let sign = <WeierstrassSignatureType>s;
   return [sign.r.toString(), sign.s.toString()];
 }
