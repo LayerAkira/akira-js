@@ -2,8 +2,8 @@ import { LayerAkiraHttpAPI } from "../http/LayerAkiraHttpAPI";
 import { IMessageEvent, w3cwebsocket as W3CWebSocket } from "websocket";
 import {
   BBO,
-  ExecutionReport,
   CancelAllReport,
+  ExecutionReport,
   Result,
   TableUpdate,
   Trade,
@@ -12,9 +12,9 @@ import { ExchangeTicker, Job, MinimalEvent, SocketEvent } from "./types";
 import {
   getEpochSeconds,
   getHashCode,
-  stringHash,
   normalize,
   sleep,
+  stringHash,
 } from "./utils";
 import {
   convertFieldsRecursively,
@@ -472,6 +472,8 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
         },
       );
 
+      client.binaryType = "arraybuffer";
+
       client.onopen = () => {
         this.logger(
           `Connect to websocket api established for ${signer} ${this.httpClient.getTradingAccount()}`,
@@ -498,8 +500,17 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
   }
 
   private enqueueMessage(message: IMessageEvent) {
+    // if (message.data instanceof Buffer) { only node js env not browser
+    //   const buffer = message.data as Buffer;
+    //   message.data = buffer.toString('utf-8');
+    // } else
+    if (message.data instanceof ArrayBuffer) {
+      // Handle data as ArrayBuffer (binary data)
+      const arrayBuffer = message.data;
+      const decoder = new TextDecoder("utf-8");
+      message = { data: decoder.decode(arrayBuffer) };
+    }
     this.logger("Received: '" + message.data + "'");
-
     this.responseQueue.push(message);
     if (!this.processingQueue) {
       this.processingQueue = true;
