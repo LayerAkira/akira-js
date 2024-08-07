@@ -2,6 +2,7 @@ import { LayerAkiraHttpAPI } from "../http/LayerAkiraHttpAPI";
 import { IMessageEvent, w3cwebsocket as W3CWebSocket } from "websocket";
 import {
   BBO,
+  CancelAllReport,
   ExecutionReport,
   Result,
   TableUpdate,
@@ -11,11 +12,15 @@ import { ExchangeTicker, Job, MinimalEvent, SocketEvent } from "./types";
 import {
   getEpochSeconds,
   getHashCode,
-  stringHash,
   normalize,
   sleep,
+  stringHash,
 } from "./utils";
-import { convertToBigintRecursively } from "../http/utils";
+import {
+  convertFieldsRecursively,
+  convertToBigintRecursively,
+} from "../http/utils";
+import { formattedDecimalToBigInt, parseTableLvl } from "../utils";
 
 /**
  * Represents a LayerAkira WebSocket API.
@@ -69,7 +74,9 @@ export interface ILayerAkiraWSSAPI {
    * @returns A promise containing the result of the subscription request.
    */
   subscribeOnExecReport(
-    clientCb: (evt: ExecutionReport | SocketEvent.DISCONNECT) => Promise<void>,
+    clientCb: (
+      evt: CancelAllReport | ExecutionReport | SocketEvent.DISCONNECT,
+    ) => Promise<void>,
     timeout?: number,
   ): Promise<Result<string>>;
 
@@ -141,6 +148,19 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
     "client",
     "hash",
   ];
+
+  private readonly castByQuote = new Set([
+    "price",
+    "quote_qty",
+    "acc_quote_qty",
+    "fill_price",
+    "fill_quote_qty",
+  ]);
+  private readonly castByBase = new Set([
+    "base_qty",
+    "acc_base_qty",
+    "fill_base_qty",
+  ]);
 
   /**
    * Constructs a new LayerAkiraWSSAPI instance.
@@ -452,6 +472,8 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
         },
       );
 
+      client.binaryType = "arraybuffer";
+
       client.onopen = () => {
         this.logger(
           `Connect to websocket api established for ${signer} ${this.httpClient.getTradingAccount()}`,
@@ -478,8 +500,17 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
   }
 
   private enqueueMessage(message: IMessageEvent) {
+    // if (message.data instanceof Buffer) { only node js env not browser
+    //   const buffer = message.data as Buffer;
+    //   message.data = buffer.toString('utf-8');
+    // } else
+    if (message.data instanceof ArrayBuffer) {
+      // Handle data as ArrayBuffer (binary data)
+      const arrayBuffer = message.data;
+      const decoder = new TextDecoder("utf-8");
+      message = { data: decoder.decode(arrayBuffer) };
+    }
     this.logger("Received: '" + message.data + "'");
-
     this.responseQueue.push(message);
     if (!this.processingQueue) {
       this.processingQueue = true;
@@ -500,29 +531,51 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
    * @param e The WebSocket message event containing the message data.
    */
   private async handleSocketMessage(e: IMessageEvent) {
-    const json = convertToBigintRecursively(
-      JSON.parse(e.data.toString()),
-      this.exclusionParseBigIntFields,
-    );
+    let json = JSON.parse(e.data.toString());
     if (json.id !== undefined) return this.jobs.get(json.id)?.event.emit(json);
+
+    let pair = json?.pair;
+    const bDecimals = this.httpClient.erc20ToDecimals[pair.base];
+    const qDecimals = this.httpClient.erc20ToDecimals[pair.quote];
+    json = convertFieldsRecursively(json, this.castByBase, (e: any) =>
+      formattedDecimalToBigInt(e, bDecimals),
+    );
+    json = convertFieldsRecursively(json, this.castByQuote, (e: any) =>
+      formattedDecimalToBigInt(e, qDecimals),
+    );
+
     let subscription: number;
     if (
       [SocketEvent.BBO, SocketEvent.TRADE, SocketEvent.BOOK_DELTA].includes(
         json.stream,
       )
     ) {
+      if (json.stream == SocketEvent.BBO) {
+        json.result.bid = parseTableLvl(json.result.bid, bDecimals, qDecimals);
+        json.result.ask = parseTableLvl(json.result.ask, bDecimals, qDecimals);
+      } else if (json.stream == SocketEvent.BOOK_DELTA) {
+        json.result.bids = json.result.bids.map((e: any) =>
+          parseTableLvl(e, bDecimals, qDecimals),
+        );
+        json.result.asks = json.result.asks.map((e: any) =>
+          parseTableLvl(e, bDecimals, qDecimals),
+        );
+      }
       subscription = getHashCode(
         { pair: json.pair, isEcosystemBook: json.ecosystem },
         json.stream,
       );
     } else if (json.stream == SocketEvent.EXECUTION_REPORT) {
       subscription = stringHash(normalize(json.client));
+      json.result.client = json.client;
+      json.result.pair = json.pair;
     } else {
       this.logger(
         `Unknown socket type of subscription message ${e.data.toString()}`,
       );
       return;
     }
+    json = convertToBigintRecursively(json, this.exclusionParseBigIntFields);
     if (!this.subscriptions.has(subscription)) {
       // TODO need to unsubscribe eventually
       this.logger(`Unknown subscription message ${e.data.toString()}`);

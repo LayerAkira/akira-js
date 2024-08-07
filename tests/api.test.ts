@@ -2,11 +2,12 @@ import { Signer, typedData } from "starknet";
 import { bigIntReplacer, castToApiSignature } from "../src/api/http/utils";
 import { BigNumberish } from "ethers";
 import * as SDK from "../src";
+import { SEPOLIA_TOKEN_MAPPING } from "../src";
 
 jest.setTimeout(10000_000); // Disable timeout for all tests in this file
 
-const TESTING_BASE_NET = "http://localhost:4431";
-const TESTING_WS = "http://localhost:4432/ws";
+const TESTING_BASE_NET = "http://localhost:4435";
+const TESTING_WS = "http://localhost:4436/ws";
 const SN_SEPOLIA: BigNumberish = "0x534e5f5345504f4c4941";
 const EXCHANGE_ADDRESS =
   "0x050cc69a427d0b7f0333d75106fffb69db389bdc750fc92479cf0beeff09a7e3";
@@ -14,7 +15,7 @@ const testAcc = {
   accountAddress:
     "0x033e29bc9B537BAe4e370559331E2bf35b434b566f41a64601b37f410f46a580",
   signer: "0x03e56dd52f96df3bc130f7a0b241dfed26b4a280d28a199e1e857f6d8acbb666",
-  privateKey: "place own",
+  privateKey: process.env.PRIVATE_KEY,
 };
 
 const signer = new Signer(testAcc.privateKey);
@@ -22,19 +23,20 @@ const signer = new Signer(testAcc.privateKey);
 let api: SDK.LayerAkiraHttpAPI; // Declare a variable to store the API instance
 api = new SDK.LayerAkiraHttpAPI(
   { apiBaseUrl: TESTING_BASE_NET },
-  SDK.SEPOLIA_TOKEN_MAPPING,
+  { ETH: 18, AETH: 18, AUSDC: 6, AUSDT: 6, STRK: 18 },
+  "STRK",
   (arg) => console.log(arg),
 );
 
-let orderBuilder: SDK.OrderConstructor;
-//   testAcc.accountAddress,
-//   1,
-//   new SDK.TickerFeeMap([1000, 10000]),
-//   "0x42",
-//   42,
-//   4242,
-//   "STRK",
-// );
+let orderBuilder = new SDK.OrderConstructor(
+  testAcc.accountAddress,
+  1,
+  new SDK.TickerFeeMap([1000, 10000]),
+  "0x42",
+  42,
+  4242,
+  "STRK",
+);
 
 const withdrawBuilder = new SDK.WithdrawConstructor(
   testAcc.accountAddress,
@@ -203,6 +205,7 @@ describe("sign check", () => {
       SDK.SEPOLIA_TOKEN_MAPPING,
       EXCHANGE_ADDRESS,
     );
+    console.log("f", typedData);
     let signature = await signer.signMessage(typedData, testAcc.accountAddress);
     let withdrawRes = await api.withdraw(
       withdraw,
@@ -247,7 +250,7 @@ describe("sign check", () => {
       SDK.OrderSide.SELL,
       10000n,
       true,
-      0n,
+      100000n,
     );
 
     let typedData = SDK.getOrderSignData(
@@ -259,6 +262,7 @@ describe("sign check", () => {
     let signature = await signer.signMessage(typedData, testAcc.accountAddress);
     let res = await api.placeOrder(order, castToApiSignature(signature));
     console.log(res);
+    console.log("HERE");
   });
 
   it("should not fail on sign check cancel order", async () => {
@@ -272,7 +276,10 @@ describe("sign check", () => {
       SDK.getDomain(SN_SEPOLIA),
     );
     let signature = await signer.signMessage(typedData, testAcc.accountAddress);
-    let res = await api.cancelOrder(cancel, castToApiSignature(signature));
+    let res = await api.cancelOrder(
+      cancel,
+      castToApiSignature(signature) as [string, string],
+    );
     console.log(res);
   });
 
@@ -281,10 +288,15 @@ describe("sign check", () => {
       maker: testAcc.accountAddress,
       order_hash: null,
       salt: 42n,
+      ticker: {
+        pair: { base: "ETH", quote: "STRK" },
+        isEcosystemBook: false,
+      },
     };
     let typedData = SDK.getCancelOrderSignData(
       cancel,
       SDK.getDomain(SN_SEPOLIA),
+      SEPOLIA_TOKEN_MAPPING,
     );
     let signature = await signer.signMessage(typedData, testAcc.accountAddress);
     let res = await api.cancelAll(cancel, castToApiSignature(signature));

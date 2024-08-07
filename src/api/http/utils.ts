@@ -8,7 +8,8 @@ export function stall(duration: number): Promise<void> {
   });
 }
 
-export function castToApiSignature(s: Signature): [string, string] {
+export function castToApiSignature(s: Signature): [string, string] | string[] {
+  if (Array.isArray(s)) return s;
   let sign = <WeierstrassSignatureType>s;
   return [sign.r.toString(), sign.s.toString()];
 }
@@ -62,4 +63,30 @@ export function convertToBigintRecursively<T>(
 
 export function bigIntReplacer(_key: string, value: any): any {
   return typeof value === "bigint" ? value.toString() : value;
+}
+
+type CustomParser<T> = (value: any) => T;
+export function convertFieldsRecursively<T>(
+  obj: T,
+  fieldsToParse: Set<string>,
+  parser: CustomParser<any>,
+): T {
+  if (!isObject(obj)) return obj;
+
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      const value = obj[key];
+
+      if (fieldsToParse.has(key)) {
+        obj[key] = parser(value) as any;
+      } else if (Array.isArray(value)) {
+        obj[key] = value.map((item) =>
+          convertFieldsRecursively(item, fieldsToParse, parser),
+        ) as any;
+      } else if (isObject(value)) {
+        obj[key] = convertFieldsRecursively(value, fieldsToParse, parser);
+      }
+    }
+  }
+  return obj;
 }

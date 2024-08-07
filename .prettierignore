@@ -6,3 +6,4 @@ lib
 docs
 README.md
 .github
+.env

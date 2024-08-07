@@ -1,6 +1,6 @@
 import { LayerAkiraHttpAPI, LayerAkiraWSSAPI } from "./api";
 import { Address } from "./types";
-import { TokenAddressMap } from "./request_types";
+import { ERC20Token, ERCToDecimalsMap, TokenAddressMap } from "./request_types";
 import { LayerAkiraContract } from "./api/contract/LayerAkiraContract";
 import { Abi, RpcProvider } from "starknet";
 
@@ -13,6 +13,7 @@ export interface SDKConfiguration {
   tokenMapping: TokenAddressMap; // maps ERC20Token alias to it address in chain
   exchangeAddress: Address;
   exchangeAbi: Abi;
+  baseFeeToken: ERC20Token;
 
   jwt?: string;
   tradingAccount?: Address; // if jwt token provided then associated signer and tradingAccount must be specified
@@ -32,12 +33,18 @@ export class LayerAkiraSDK {
   /**
    * Create a new instance of LayerAkiraSDK.
    * @param config
-   * @param rpc
+   * @param ercToDecimals
+   * @param rpcUrlProvider
    */
-  constructor(config: SDKConfiguration, rpc: RpcProvider) {
+  constructor(
+    config: SDKConfiguration,
+    ercToDecimals: ERCToDecimalsMap,
+    rpcUrlProvider: string,
+  ) {
     this.akiraHttp = new LayerAkiraHttpAPI(
       config,
-      config.tokenMapping,
+      ercToDecimals,
+      config.baseFeeToken,
       config.logger,
     );
     this.akiraWss = new LayerAkiraWSSAPI(
@@ -49,7 +56,7 @@ export class LayerAkiraSDK {
     this.akiraContract = new LayerAkiraContract(
       config.exchangeAddress,
       config.exchangeAbi,
-      rpc,
+      new RpcProvider({ nodeUrl: rpcUrlProvider }),
     );
   }
 }

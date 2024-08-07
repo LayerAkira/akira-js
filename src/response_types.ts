@@ -107,6 +107,13 @@ export interface ExecutionReport {
   status: OrderStatus; // The status of the order.
   matcher_result: MatchingEngineResult; // result that yields matching engine
 }
+/**
+ * Represents result of cancel all by ticker indicating that exchange cancelled all user orders for particular ExchangeTicker
+ */
+export interface CancelAllReport {
+  client: Address; // trader
+  cancel_ticker_hash: string; // hash of the request
+}
 
 /**
  * Represents a trade.
