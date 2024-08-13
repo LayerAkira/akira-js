@@ -138,19 +138,17 @@ describe("query market data info", () => {
 
 describe("query private data info", () => {
   it("should retrieve full orders", async () => {
-    let data: SDK.Result<SDK.ExtendedOrder[]> = (await api.getOrders(
-      1,
-    )) as SDK.Result<SDK.ExtendedOrder[]>;
-    expect(data.result).toBeDefined();
-    console.log(data.result![0]);
+    let data: SDK.ExtendedOrder[] = (await api.getOrders(1))?.result
+      ?.data as SDK.ExtendedOrder[];
+    expect(data).toBeDefined();
+    console.log(data![0]);
   });
 
   it("should retrieve reduced orders", async () => {
-    let data: SDK.Result<SDK.ReducedOrder[]> = (await api.getOrders(
-      2,
-    )) as SDK.Result<SDK.ReducedOrder[]>;
-    expect(data.result).toBeDefined();
-    console.log(data.result![0]);
+    let data: SDK.ReducedOrder[] = (await api.getOrders(2))?.result
+      ?.data as SDK.ReducedOrder[];
+    expect(data).toBeDefined();
+    console.log(data![0]);
   });
 
   it("should retrieve order", async () => {

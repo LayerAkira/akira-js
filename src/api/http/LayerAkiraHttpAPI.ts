@@ -262,13 +262,19 @@ export class LayerAkiraHttpAPI {
    * @param mode - either will return ReducedOrder with mode == 2 or full info with mode = 1
    * @param limit - how many orders to retrieve in request, max is set to 20
    * @param offset -- offset from beginning
-   * @returns A Promise that resolves with the result Order[] or ReducedOrder[]
+   * @param active -- active parameter indicates whether to return only active or inactive orders.
+   * @param cursor -- cursor
+   * @returns A Promise that resolves with the result {}data: Order[] or ReducedOrder[], cursor}
    */
   public async getOrders(
     mode: number = 1,
     limit = 20,
     offset = 0,
-  ): Promise<Result<ExtendedOrder[] | ReducedOrder[]>> {
+    active = false,
+    cursor?: string,
+  ): Promise<
+    Result<{ data: ExtendedOrder[] | ReducedOrder[]; cursor: string | null }>
+  > {
     return await this.get(
       "/user/orders",
       {
@@ -276,6 +282,8 @@ export class LayerAkiraHttpAPI {
         trading_account: this.tradingAccount,
         limit,
         offset,
+        active,
+        cursor,
       },
       true,
       ["maker", "router_signer"],
@@ -696,19 +704,39 @@ export class LayerAkiraHttpAPI {
   private parseOrder(o: any) {
     o = convertFieldsRecursively(
       o,
-      new Set(["limit_price", "price", "filled_quote_amount", "quote_qty"]),
-      (e) => formattedDecimalToBigInt(e, this.erc20ToDecimals[o.ticker.quote]),
+      new Set([
+        "limit_price",
+        "price",
+        "filled_quote_amount",
+        "quote_qty",
+        "failed_quote_amount",
+        "",
+      ]),
+      (e) =>
+        e !== undefined && e !== null
+          ? formattedDecimalToBigInt(e, this.erc20ToDecimals[o.ticker.quote])
+          : e,
     );
     o = convertFieldsRecursively(
       o,
-      new Set(["filled_base_amount", "base_qty"]),
-      (e) => formattedDecimalToBigInt(e, this.erc20ToDecimals[o.ticker.quote]),
+      new Set(["filled_base_amount", "base_qty", "failed_base_amount"]),
+      (e) =>
+        e !== undefined && e !== null
+          ? formattedDecimalToBigInt(e, this.erc20ToDecimals[o.ticker.quote])
+          : e,
     );
     if (o.fee)
       o.fee.gas_fee.max_gas_price = formattedDecimalToBigInt(
         o.fee.gas_fee.max_gas_price,
         this.erc20ToDecimals[this.baseFeeToken],
       );
+    if (o?.state?.reimbursement)
+      o!.state!.reimbursement = BigInt(o?.state?.reimbursement);
+    if (o?.state?.gas_paid) o!.state!.gas_paid = BigInt(o?.state?.gas_paid);
+    if (o?.state?.paid_fee_as_maker)
+      o!.state!.paid_fee_as_maker = BigInt(o?.state?.paid_fee_as_maker);
+    if (o?.state?.paid_fee_as_taker)
+      o!.state!.paid_fee_as_taker = BigInt(o?.state?.paid_fee_as_taker);
     return o;
   }
 }

@@ -90,6 +90,7 @@ export enum MatchingEngineResult {
   MIN_RECEIVE_FAILED = "MIN_RECEIVE_FAILED",
   NOT_ENOUGH_LIQUIDITY = "NOT_ENOUGH_LIQUIDITY",
   GAS_COST = "GAS_COST", // gas higher than settled trades post fees
+  FAILED_VALIDATION = "FAILED_VALIDATION", // deep validation of order was unsuccessful
 }
 /**
  * Represents an execution report for an order.

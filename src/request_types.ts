@@ -126,6 +126,14 @@ export interface OrderStateInfo {
   cur_number_of_swaps: bigint; // The current number of swaps.
   status: OrderStatus; // The status of the order.
   limit_price: bigint | undefined; // The limit price of the order, if applicable. the price at which it resides as resting order
+  paid_fee_as_maker: bigint; // not normalized, in token user decided to pay: either pay or receive, in total for exchange and router fees
+  paid_fee_as_taker: bigint; // same as paid_fee_as_maker
+  failed_base_amount: bigint; // amount that was failed
+  failed_quote_amount: bigint; // amount that was failed
+  failed_offchain: number; // failed offchain
+  failed_onchain: number; // failed onchain
+  reimbursement: bigint; // applicable to market makers
+  gas_paid: bigint; // in final token user specified
 }
 
 /**

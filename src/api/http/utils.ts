@@ -35,7 +35,8 @@ export function convertToBigintRecursively<T>(
   obj: T,
   excludedFields: string[] = [],
 ): T {
-  if (isConvertibleToBigint(obj)) return BigInt(obj as any) as T;
+  if (isConvertibleToBigint(obj))
+    return obj === undefined || obj === null ? obj : (BigInt(obj as any) as T);
 
   if (Array.isArray(obj)) {
     return obj.map((item) =>
@@ -48,7 +49,10 @@ export function convertToBigintRecursively<T>(
     if (obj.hasOwnProperty(key) && !excludedFields.includes(key)) {
       const value = obj[key];
       if (isConvertibleToBigint(value)) {
-        obj[key] = BigInt(value as any) as any;
+        obj[key] =
+          value === undefined || value === null
+            ? value
+            : (BigInt(value as any) as any);
       } else if (Array.isArray(value)) {
         obj[key] = value.map((item) =>
           convertToBigintRecursively(item, excludedFields),
