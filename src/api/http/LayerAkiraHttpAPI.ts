@@ -174,8 +174,19 @@ export class LayerAkiraHttpAPI {
       (o: any) => {
         const b = this.erc20ToDecimals[base];
         const q = this.erc20ToDecimals[quote];
-        if (o.bid) o.bid = parseTableLvl(o.bid, b, q);
-        if (o.ask) o.ask = parseTableLvl(o.ask, b, q);
+        if (o.bid.price)
+          o.bid = {
+            price: formattedDecimalToBigInt(o.bid.price, q),
+            volume: formattedDecimalToBigInt(o.bid.volume, b),
+            orders: o.bid.orders,
+          };
+        if (o.ask.price)
+          o.ask = {
+            price: formattedDecimalToBigInt(o.ask.price, q),
+            volume: formattedDecimalToBigInt(o.ask.volume, b),
+            orders: o.ask.orders,
+          };
+
         return o;
       },
     );

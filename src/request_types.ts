@@ -1,5 +1,6 @@
 import { Address, OrderTimestamp } from "./types";
 import { ExchangeTicker } from "./api";
+import { MatchingEngineResult } from "./response_types";
 
 /**
  * Represents all status that order might have on exchange
@@ -179,6 +180,8 @@ export interface ReducedOrder {
   stp: STPMode;
   expiration_time: OrderTimestamp;
   source: string;
+  created_at: OrderTimestamp;
+  taker_match_result: MatchingEngineResult;
 }
 
 /**
