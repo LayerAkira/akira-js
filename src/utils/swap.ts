@@ -38,7 +38,10 @@ export function intentQuoteForBaseAsset(
     } else {
       //TODO: real issue how to make good approximation?
       const trades = min(
-        ceilDivide(lvl.volume, minTradedQty),
+        ceilDivide(
+          remainingFillAmountQuote,
+          (minTradedQty * lvl.price) / baseAsset1Qty,
+        ),
         BigInt(lvl.orders),
       );
       totalReceiveToken +=
@@ -83,12 +86,13 @@ export function intentBaseForQuoteAsset(
     } else {
       //TODO: real issue how to make good approximation?
       const trades = min(
-        ceilDivide(lvl.volume, minTradedQty),
+        ceilDivide(remainingFillAmountEth, minTradedQty),
         BigInt(lvl.orders),
       );
       totalReceiveToken += (remainingFillAmountEth * lvl.price) / baseAssetQty;
       approxTrades += Number(trades);
     }
+    console.log("approx trades", approxTrades);
 
     remainingFillAmountEth -= lvl.volume;
     if (remainingFillAmountEth <= 0) break;
