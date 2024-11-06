@@ -17,7 +17,7 @@ export interface DbTrade {
   taker_hash: Address;
   event_block: number | null;
   tx_index: number | null;
-  tx_hash: string | null;
+  tx_hash: string;
   event_idx: number;
   usd_volume: string;
   exchange_address: string;
@@ -32,8 +32,8 @@ export interface DbRollup {
     gas_price: string;
   };
   tx_hash: string;
-  tx_index: number;
-  block_number: number;
+  tx_index: number | null;
+  block_number: number | null;
   exchange_address: string;
   spent_on_gas: string;
   db_id: string | null;
@@ -94,6 +94,6 @@ export interface DbDeposit {
   funder: Address;
   amount: bigint;
   event_idx: number;
-  tx_index: number;
-  event_block: number;
+  tx_index: number | null;
+  event_block: number | null;
 }
