@@ -45,7 +45,7 @@ export interface DbRollup {
 
 export interface DbOrder {
   order_hash: string;
-  maker: string;
+  maker: Address;
   price: string;
   qty_base: string;
   qty_quote: string;
@@ -81,8 +81,19 @@ export interface DbOrder {
 }
 
 export interface TraderVolume {
-  trader: string;
+  trader: Address;
   total_usd_traded_vol: number;
   total_trades: number;
   total_orders: number;
+}
+
+export interface DbDeposit {
+  tx_hash: string;
+  receiver: Address;
+  token_address: Address;
+  funder: Address;
+  amount: bigint;
+  event_idx: number;
+  tx_index: number;
+  event_block: number;
 }

@@ -1,6 +1,5 @@
 import { ethers, toUtf8Bytes } from "ethers";
 import { bigIntReplacer, convertToBigintRecursively, stall } from "./utils";
-import { Result } from "../../response_types";
 
 export class BaseHttpAPI {
   public readonly apiBaseUrl: string;

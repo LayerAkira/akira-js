@@ -1,5 +1,5 @@
 import { Result } from "../../response_types";
-import { DbOrder, DbRollup, DbTrade, TraderVolume } from "./types";
+import { DbDeposit, DbOrder, DbRollup, DbTrade, TraderVolume } from "./types";
 import { BaseHttpAPI } from "../http/BaseHttpAPI";
 
 /**
@@ -64,6 +64,7 @@ export class IndexerAPI extends BaseHttpAPI {
       (o: any) => o,
     );
   }
+
   /**
    * Retrieves all orders for a trader.
    * @param trader - Trader address.
@@ -97,6 +98,34 @@ export class IndexerAPI extends BaseHttpAPI {
       false,
       [],
       (o: any) => o,
+    );
+  }
+
+  /**
+   * Retrieves trader deposits
+   * @param trader - Trader address.
+   * @param token_address - filter to skew on specific token address
+   * @param cursor - Cursor to paginate. use {tx_hash}_{event_idx} as cursor
+   * @param num - Number of orders to fetch.
+   * @returns A Promise that resolves with a list of db deposits. from latest to oldest
+   */
+  public async getTraderDeposits(
+    trader: string,
+    token_address: string | null = null,
+    cursor: string | null = null,
+    num: number = 20,
+  ): Promise<Result<DbDeposit[]>> {
+    let path = `/deposits/${trader}`;
+    if (token_address !== null) path += "/" + token_address;
+    return await this.get<Result<DbDeposit[]>>(
+      path,
+      cursor !== null ? { cursor, num } : { num },
+      false,
+      [],
+      (o: any) => {
+        o.forEach((e: any) => (e.amount = BigInt(e.amount)));
+        return o;
+      },
     );
   }
 }
