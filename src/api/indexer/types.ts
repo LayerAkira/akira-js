@@ -97,3 +97,22 @@ export interface DbDeposit {
   tx_index: number | null;
   event_block: number | null;
 }
+
+/**
+ * Interface for withdrawal data.
+ */
+export interface DbWithdrawal {
+  tx_hash: string;
+  maker: Address;
+  token_address: Address;
+  receiver: Address;
+  salt: string;
+  amount: bigint;
+  spent_gas: string;
+  gas_token: ERC20Token;
+  direct: boolean;
+  event_block: number | null;
+  tx_index: number | null;
+  event_idx: number;
+  exchange_address: Address;
+}
