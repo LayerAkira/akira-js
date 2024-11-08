@@ -1,4 +1,4 @@
-import { Result } from "../../response_types";
+import { Result, Trade } from "../../response_types";
 import {
   DbDeposit,
   DbOrder,
@@ -8,6 +8,7 @@ import {
   TraderVolume,
 } from "./types";
 import { BaseHttpAPI } from "../http/BaseHttpAPI";
+import { ERC20Token } from "../../request_types";
 
 /**
  * The API class for the Indexer SDK.
@@ -37,7 +38,31 @@ export class IndexerAPI extends BaseHttpAPI {
       (o: any) => o,
     );
   }
-
+  /**
+   * Retrieves trades data for particular ticker.
+   *
+   * @param pair - trades for associated traded pair
+   * @param cursor - {maker_hash}_{taker_hash} of last processed entry
+   * @param num
+   * @returns A Promise that resolves with the trade data result.
+   */
+  public async getTradesByTicker(
+    pair: {
+      base: ERC20Token;
+      quote: ERC20Token;
+      is_ecosystem_book: boolean;
+    },
+    cursor: string | null = null,
+    num: string = "20",
+  ): Promise<Result<DbTrade[]>> {
+    return await this.get<Result<DbTrade[]>>(
+      `/trades/${pair.base}/${pair.quote}/${pair.is_ecosystem_book}`,
+      cursor !== null ? { cursor, num } : { num },
+      false,
+      [],
+      (o: any) => o,
+    );
+  }
   /**
    * Retrieves rollup data based on the transaction hash.
    * @param tx_hash - The transaction hash.
@@ -75,17 +100,25 @@ export class IndexerAPI extends BaseHttpAPI {
   /**
    * Retrieves all orders for a trader.
    * @param trader - Trader address.
+   * @param pair - optional to skew on particular traded pair
    * @param cursor - Cursor to paginate. use hash of the last processed order
    * @param num - Number of orders to fetch.
    * @returns A Promise that resolves with a list of trader orders. from latest to oldest
    */
   public async getTraderOrders(
     trader: string,
+    pair: {
+      base: ERC20Token;
+      quote: ERC20Token;
+      is_ecosystem_book: boolean;
+    } | null = null,
     cursor: string | null = null,
     num: string = "20",
   ): Promise<Result<DbOrder[]>> {
     return await this.get<Result<DbOrder[]>>(
-      `/orders/${trader}`,
+      pair === null
+        ? `/orders/${trader}`
+        : `/orders/${trader}/${pair.base}/${pair.quote}/${pair.is_ecosystem_book}`,
       cursor !== null ? { cursor, num } : { num },
       false,
       [],
