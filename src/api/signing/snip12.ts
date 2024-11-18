@@ -207,7 +207,7 @@ export function getOrderSignData(
   tokenMapping: TokenAddressMap,
   exchangeAddress: Address,
 ): TypedData {
-  const { ticker, ...restOrder } = order;
+  const { ticker, snip9_call, ...restOrder } = order;
   return {
     types: orderType,
     primaryType: "Order",
