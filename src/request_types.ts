@@ -150,9 +150,10 @@ interface ExecuteOutsideCall {
   execute_after: number; // Execution start time
   execute_before: number; // Execution end time
   nonce: string; // Unique identifier
-  signature: number[]; // List of integers for the signature, min size 2, max size 100
+  signature: TraderSignature; // List of integers for the signature, min size 2, max size 100
   signer_address: string; // Address of the signer
   version: string; // Version of snip12, v1, v2
+  router_sign: [string, string];
 }
 
 /**
