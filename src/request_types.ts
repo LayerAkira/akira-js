@@ -137,7 +137,7 @@ export interface OrderStateInfo {
   gas_paid: bigint; // in final token user specified
 }
 
-interface OutsideCall {
+export interface OutsideCall {
   to: Address; // Contract address
   selector: string; // Human-readable selector, e.g., "approve"
   args?: string[]; // Optional list of arguments, mutual exclusive with kwargs
@@ -153,7 +153,6 @@ interface ExecuteOutsideCall {
   signature: TraderSignature; // List of integers for the signature, min size 2, max size 100
   signer_address: string; // Address of the signer
   version: string; // Version of snip12, v1, v2
-  router_sign: [string, string];
 }
 
 /**

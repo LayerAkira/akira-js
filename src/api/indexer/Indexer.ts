@@ -1,4 +1,4 @@
-import { Result, Trade } from "../../response_types";
+import { Result } from "../../response_types";
 import {
   DbDeposit,
   DbOrder,
