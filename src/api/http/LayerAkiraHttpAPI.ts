@@ -1,12 +1,7 @@
 import { Address } from "../../types";
-import { BigNumberish, ethers, toUtf8Bytes } from "ethers";
-import { SignData, NetworkIssueCode } from "./types";
-import {
-  bigIntReplacer,
-  convertFieldsRecursively,
-  convertToBigintRecursively,
-  stall,
-} from "./utils";
+import { BigNumberish } from "ethers";
+import { SignData } from "./types";
+import { convertFieldsRecursively } from "./utils";
 import {
   CancelRequest,
   ERC20Token,
@@ -32,6 +27,7 @@ import {
   formattedDecimalToBigInt,
   parseTableLvl,
 } from "../utils";
+import { BaseHttpAPI } from "./BaseHttpAPI";
 
 export interface LayerAkiraHttpConfig {
   jwt?: string;
@@ -46,23 +42,13 @@ const AUTH_HEADER_INVALID_MSG = "Auth header invalid";
  * The API class for the LayerAkira SDK.
  * @category Main Classes
  */
-export class LayerAkiraHttpAPI {
-  /**
-   * Base url for the API
-   */
-  public readonly apiBaseUrl: string;
+export class LayerAkiraHttpAPI extends BaseHttpAPI {
   public readonly erc20ToDecimals: ERCToDecimalsMap;
   public isJWTInvalid: boolean = false;
   private jwtToken: string | undefined;
   private tradingAccount: Address | undefined;
   private signer: Address | undefined;
-  private timeoutMillis: number;
   private baseFeeToken: ERC20Token;
-
-  /**
-   * Logger function to use when debugging
-   */
-  public logger: (arg: string) => void;
 
   constructor(
     config: LayerAkiraHttpConfig,
@@ -71,12 +57,10 @@ export class LayerAkiraHttpAPI {
     logger?: (arg: string) => void,
     timeoutMillis?: number,
   ) {
-    this.apiBaseUrl = config.apiBaseUrl;
+    super(config.apiBaseUrl, logger, timeoutMillis);
     this.jwtToken = config.jwt;
     this.tradingAccount = config.tradingAccount;
     this.signer = config.signer;
-    this.logger = logger ?? ((arg: string) => arg);
-    this.timeoutMillis = timeoutMillis ?? 10 * 1000;
     this.erc20ToDecimals = erc20ToDecimals;
     this.baseFeeToken = baseFeeToken;
   }
@@ -579,76 +563,7 @@ export class LayerAkiraHttpAPI {
     throw new Error("Not implemented");
   }
 
-  /**
-   * Generic fetch method for any API endpoint
-   * @param apiPath Path to URL endpoint under API
-   * @param query URL query params. Will be used to create a URLSearchParams object.
-   * @param applyParseInt apply casting of integers in hex format and '\d+' to bigint
-   * @param exclusionFields which fields should be omitted for casting
-   * @returns @typeParam T The response from the API.
-   */
-  public async get<T>(
-    apiPath: string,
-    query: object = {},
-    applyParseInt = true,
-    exclusionFields: string[] = [],
-    preApplyParser?: (o: any) => any,
-  ): Promise<T> {
-    const qs = this.objectToSearchParams(query);
-    const url = `${this.apiBaseUrl}${apiPath}${qs.length > 0 ? "?" + qs : qs}`;
-    return await this._fetch(
-      url,
-      applyParseInt,
-      exclusionFields,
-      undefined,
-      undefined,
-      preApplyParser,
-    );
-  }
-
-  /**
-   * Generic post method for any API endpoint.
-   * @param apiPath Path to URL endpoint under API
-   * @param body Data to send.
-   * @param applyParseInt
-   * @param exclusionFields
-   * @param opts ethers ConnectionInfo, similar to Fetch API.
-   * @returns @typeParam T The response from the API.
-   */
-  public async post<T>(
-    apiPath: string,
-    body: object,
-    applyParseInt = true,
-    exclusionFields: string[] = [],
-    opts?: object,
-    preApplyParser?: (o: any) => any,
-  ): Promise<T> {
-    const url = `${this.apiBaseUrl}${apiPath}`;
-    return await this._fetch(
-      url,
-      applyParseInt,
-      exclusionFields,
-      opts,
-      body,
-      preApplyParser,
-    );
-  }
-
-  private objectToSearchParams(params: object = {}) {
-    const urlSearchParams = new URLSearchParams();
-
-    Object.entries(params).forEach(([key, value]) => {
-      if (Array.isArray(value)) {
-        value.forEach((item) => item && urlSearchParams.append(key, item));
-      } else {
-        urlSearchParams.append(key, value);
-      }
-    });
-
-    return urlSearchParams.toString();
-  }
-
-  private async _fetch(
+  protected async _fetch(
     url: string,
     applyParseInt = true,
     exclusionFields: string[] = [],
@@ -656,60 +571,20 @@ export class LayerAkiraHttpAPI {
     body?: object,
     preApplyParser?: (o: any) => any,
   ) {
-    const req = new ethers.FetchRequest(url);
-    // Set the headers
     headers = {
       ...(this.jwtToken ? { Authorization: this.jwtToken } : {}),
       ...headers,
     };
-    for (const [key, value] of Object.entries(headers)) {
-      req.setHeader(key, value);
-    }
-    if (body) {
-      req.body = toUtf8Bytes(JSON.stringify(body, bigIntReplacer));
-      req.setHeader("content-type", "application/json");
-    }
-    req.timeout = this.timeoutMillis;
-    req.retryFunc = async (_req, resp, attempt) => {
-      this.logger(
-        `Fetch attempt ${attempt} failed with status ${resp.statusCode}`,
-      );
-      await stall(1000);
-      return true;
-    };
-
-    this.logger(
-      `Sending request: ${url}, ${JSON.stringify({
-        request: req,
-        headers: req.headers,
-        body: req.body,
-      })}`,
+    const resp = await super._fetch(
+      url,
+      applyParseInt,
+      exclusionFields,
+      headers,
+      body,
+      preApplyParser,
     );
-    try {
-      const response = await req.send();
-      if (!response.ok()) {
-        // If an errors array is returned, throw with the error messages.
-        const error = response.bodyJson?.error;
-        if (error !== undefined) {
-          this.isJWTInvalid =
-            response.statusCode == 401 && error === AUTH_HEADER_INVALID_MSG;
-          return response.bodyJson;
-        } else {
-          return { code: response.statusCode, message: response.bodyText };
-        }
-      }
-      if (response.bodyJson.result === undefined) return response.bodyJson;
-      let data = preApplyParser
-        ? preApplyParser(response.bodyJson["result"])
-        : response.bodyJson["result"];
-      return {
-        result: applyParseInt
-          ? convertToBigintRecursively(data, exclusionFields)
-          : data,
-      };
-    } catch (e: any) {
-      return { code: NetworkIssueCode, exception: e };
-    }
+    this.isJWTInvalid = resp.message === AUTH_HEADER_INVALID_MSG;
+    return resp;
   }
 
   private parseOrder(o: any) {
