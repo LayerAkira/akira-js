@@ -42,3 +42,5 @@ export * from "./api/indexer/types";
 
 export { normalize } from "./api/websocket/utils";
 export { castToApiSignature } from "./api";
+export * from "./api/index";
+export * from "./rollup/RollupOnchainParser";

@@ -100,7 +100,7 @@ export class BaseHttpAPI {
     };
 
     this.logger(
-      `Sending request: ${url}, ${JSON.stringify({ headers, body })}`,
+      `Sending request: ${url}, ${JSON.stringify({ headers, body }, bigIntReplacer)}`,
     );
 
     try {

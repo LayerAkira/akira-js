@@ -468,6 +468,68 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
     };
     return await this.post("/place_order", requestBody, false);
   }
+  /**
+   * Sending request to exchange to sign external taker order by akira router
+   * @returns A Promise that resolves with the router signature of provided order
+   */
+  public async signExternalOrder(
+    order: Order,
+  ): Promise<Result<[string, string]>> {
+    const minReceive = order.constraints.min_receive_amount;
+    const requestBody = {
+      ...order,
+      ticker: [order.ticker.base, order.ticker.quote],
+      sign: ["0", "0"],
+      router_sign: ["0", "0"],
+      price: bigIntToFormattedDecimal(
+        order.price,
+        this.erc20ToDecimals[order.ticker.quote],
+      ),
+      qty: {
+        base_qty: bigIntToFormattedDecimal(
+          order.qty.base_qty,
+          this.erc20ToDecimals[order.ticker.base],
+        ),
+        quote_qty: bigIntToFormattedDecimal(
+          order.qty.quote_qty,
+          this.erc20ToDecimals[order.ticker.quote],
+        ),
+      },
+      fee: {
+        ...order.fee,
+        gas_fee: {
+          ...order.fee.gas_fee,
+          fee_token: order.fee.gas_fee.fee_token,
+          max_gas_price: bigIntToFormattedDecimal(
+            order.fee.gas_fee.max_gas_price,
+            this.erc20ToDecimals[this.baseFeeToken],
+          ),
+          conversion_rate: [
+            bigIntToFormattedDecimal(
+              order.fee.gas_fee.conversion_rate[0],
+              this.erc20ToDecimals[this.baseFeeToken],
+            ),
+            bigIntToFormattedDecimal(
+              order.fee.gas_fee.conversion_rate[1],
+              this.erc20ToDecimals[order.fee.gas_fee.fee_token],
+            ),
+          ],
+        },
+      },
+      constraints: {
+        ...order.constraints,
+        min_receive_amount: bigIntToFormattedDecimal(
+          minReceive,
+          this.erc20ToDecimals[
+            order.flags.is_sell_side ? order.ticker.quote : order.ticker.base
+          ],
+        ),
+      },
+    };
+    return await this.post("/router/sign_external_order", requestBody, false);
+  }
+
+  // /router/sign_external_order
 
   /**
    * Fetches the user information from the API.

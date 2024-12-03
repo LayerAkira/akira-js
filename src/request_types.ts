@@ -137,6 +137,24 @@ export interface OrderStateInfo {
   gas_paid: bigint; // in final token user specified
 }
 
+export interface OutsideCall {
+  to: Address; // Contract address
+  selector: string; // Human-readable selector, e.g., "approve"
+  args?: string[]; // Optional list of arguments, mutual exclusive with kwargs
+  kwargs?: Record<string, string>; // Optional dictionary of keyword arguments of call
+}
+
+interface ExecuteOutsideCall {
+  caller: string; // Contract address who can call
+  calls: OutsideCall[]; // Array of calls
+  execute_after: number; // Execution start time
+  execute_before: number; // Execution end time
+  nonce: string; // Unique identifier
+  signature: TraderSignature; // List of integers for the signature, min size 2, max size 100
+  signer_address: string; // Address of the signer
+  version: string; // Version of snip12, v1, v2
+}
+
 /**
  * Represents a user order on the LayerAkira exchange
  */
@@ -150,13 +168,7 @@ export interface Order {
   salt: bigint;
   flags: OrderFlags;
   source: string; // from where order
-  // get side(): Side {
-  //     return this.flags.isSellSide ? Side.SELL : Side.BUY;
-  // }
-  //
-  // get type(): OrderType {
-  //     return this.flags.isMarketOrder ? OrderType.MARKET : OrderType.LIMIT;
-  // }
+  snip9_call?: ExecuteOutsideCall;
 }
 
 /**

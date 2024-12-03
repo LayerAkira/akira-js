@@ -22,7 +22,6 @@ import {
   TradeEvent,
   WithdrawalEvent,
 } from "./types";
-import { depositEvent } from "./abi";
 
 /**
  * Class representing the LayerAkira exchange contract.
@@ -231,6 +230,8 @@ export class LayerAkiraContract {
       },
       continuationToken,
       chunkSize,
+      undefined,
+      "ExchangeBalanceComponent::exchange_balance_logic_component",
     )) as Result<{ events: TradeEvent[]; continuationToken?: string }>;
     // https://github.com/NethermindEth/juno/issues/1922 due this need additional filtering for false positive
     if (tradeEvents.result)
@@ -285,6 +286,8 @@ export class LayerAkiraContract {
       },
       continuationToken,
       chunkSize,
+      undefined,
+      "WithdrawComponent::withdraw_component",
     ) as Result<{ events: WithdrawalEvent[]; continuationToken?: string }>;
     if (events.result)
       events.result!.events = events.result.events.filter(
@@ -329,7 +332,8 @@ export class LayerAkiraContract {
       },
       continuationToken,
       chunkSize,
-      { [num.toHex(hash.starknetKeccak("Deposit"))]: depositEvent },
+      undefined,
+      "DepositComponent::deposit_component",
     )) as Result<{ events: DepositEvent[] }>;
     if (events.result)
       events.result!.events = events.result.events.filter(
@@ -363,6 +367,7 @@ export class LayerAkiraContract {
     continuationToken?: string,
     chunkSize = 10,
     abiEvents?: AbiEvents,
+    componentName?: string,
   ): Promise<
     Result<{
       events: T[];
@@ -389,9 +394,10 @@ export class LayerAkiraContract {
         continuation_token: continuationToken,
       });
       // due this and since we use nested components https://github.com/starknet-io/starknet.js/issues/1134
-      result.events.forEach((evt) => {
-        evt.keys.shift();
-      });
+      // result.events.forEach((evt) => {
+      //   evt.keys.shift();
+      // });
+      console.log(result.events);
       const parsedEvents = events.parseEvents(
         result.events,
         abiEvents ?? this.abiEvents,
@@ -400,7 +406,7 @@ export class LayerAkiraContract {
       );
       const evts = parsedEvents.map((parsedEvt: any, index) =>
         parseEvent({
-          ...parsedEvt[eventName],
+          ...parsedEvt[`kurosawa_akira::${componentName}::${eventName}`],
           transaction_hash: result.events[index].transaction_hash,
           block_number: result.events[index].block_number,
         }),
