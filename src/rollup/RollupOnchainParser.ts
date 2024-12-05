@@ -247,7 +247,6 @@ export class AkiraRollupInputParser {
     });
 
     return result!;
-
   }
 
   private parseCalldataApplySteps(calldata: Array<string>): ApplyStepsCalldata {

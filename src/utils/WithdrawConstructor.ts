@@ -1,5 +1,5 @@
 import { Address } from "../types";
-import { ERC20Token, Withdraw } from "../request_types";
+import { ERC20Token, SignScheme, Withdraw } from "../request_types";
 import { generateRandomSalt } from "./utils";
 
 export class WithdrawConstructor {
@@ -36,6 +36,7 @@ export class WithdrawConstructor {
    * @param gasFeeToken The token used to pay the gas fee (optional, defaults to nativeGasFeeToken).
    * @param conversionRate The conversion rate for the gas fee (optional, defaults to [1n, 1n]).
    * @param receiver The address of the receiver (optional, defaults to the trader's address).
+   * @param signScheme
    * @returns The constructed withdraw request.
    * Note that if withdrawal token is the same token in which user would pay for the gas
    * Actual receiving amount would be amount - fee for the gas
@@ -47,6 +48,7 @@ export class WithdrawConstructor {
     gasFeeToken?: ERC20Token,
     conversionRate?: [bigint, bigint],
     receiver?: Address,
+    signScheme: SignScheme = SignScheme.ECDSA,
   ): Withdraw {
     return {
       amount: amount,
@@ -60,6 +62,7 @@ export class WithdrawConstructor {
         max_gas_price: gasPriceInChainToken,
         conversion_rate: conversionRate ?? [1n, 1n],
       },
+      sign_scheme: signScheme,
     };
   }
 }

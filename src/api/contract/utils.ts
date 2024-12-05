@@ -14,6 +14,7 @@ import {
   getWithdrawSignData,
   StarknetDomain,
 } from "../signing/snip12";
+import { SignScheme } from "../../request_types";
 
 /**
  * Retrieves the ABI of a contract at a specified address.
@@ -85,11 +86,16 @@ export function hexToAscii(evenHexString: string) {
  * Generates the withdrawal hash for a given withdrawal event and Starknet domain.
  * @param w The withdrawal event for which to generate the hash.
  * @param domain The Starknet domain.
+ * @param sign_scheme
  * @returns The hash of the withdrawal event data.
  */
 export function getWithdrawHashByEvent(
   w: WithdrawalEvent,
   domain: StarknetDomain,
+  sign_scheme: SignScheme,
 ): string {
-  return getSignDataHash(getWithdrawSignData(w, domain), w.maker);
+  return getSignDataHash(
+    getWithdrawSignData({ ...w, sign_scheme: sign_scheme }, domain),
+    w.maker,
+  );
 }

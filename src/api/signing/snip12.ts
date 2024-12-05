@@ -56,6 +56,8 @@ const withdrawType = {
     { name: "salt", type: "felt" },
     { name: "gas_fee", type: "GasFee" },
     { name: "receiver", type: "felt" },
+    { name: "exchange", type: "felt" },
+    { name: "sign_scheme", type: "felt" },
   ],
   ...u256Type,
   ...gasFeeType,
@@ -124,6 +126,7 @@ const orderType = {
     { name: "flags", type: "OrderFlags" },
     { name: "exchange", type: "felt" },
     { name: "source", type: "felt" },
+    { name: "sign_scheme", type: "felt" },
   ],
   ...u256Type,
   ...fixedFeeType,
@@ -163,6 +166,7 @@ const cancelAllOnchainType = {
     { name: "maker", type: "felt" },
     { name: "new_nonce", type: "felt" },
     { name: "gas_fee", type: "GasFee" },
+    { name: "sign_scheme", type: "felt" },
   ],
   ...u256Type,
   ...gasFeeType,
@@ -234,6 +238,7 @@ export function getOrderSignData(
       },
       exchange: exchangeAddress,
       source: order.source,
+      sign_scheme: order.sign_scheme,
     },
   };
 }
@@ -262,6 +267,7 @@ export function getWithdrawSignData(
       amount: uint256.bnToUint256(withdraw.amount),
       gas_fee: _prepareGas(withdraw.gas_fee, tokenMapping),
       exchange: exchangeAddress,
+      sign_scheme: withdraw.sign_scheme,
     },
   };
 }
