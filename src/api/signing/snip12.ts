@@ -203,13 +203,13 @@ export function getDomain(
  * @param order - order that user wants to sign
  * @param domain - starknet domain where exchange name and version and chain specified
  * @param tokenMapping -  maps ERC20Token to address onchain
- * @param exchangeAddress - address of LayerAkira exchange
+ * @param executorAddress - address of LayerAkiraExecutor
  */
 export function getOrderSignData(
   order: Order,
   domain: StarknetDomain,
   tokenMapping: TokenAddressMap,
-  exchangeAddress: Address,
+  executorAddress: Address,
 ): TypedData {
   const { ticker, snip9_call, ...restOrder } = order;
   return {
@@ -236,7 +236,7 @@ export function getOrderSignData(
           restOrder.constraints.min_receive_amount,
         ),
       },
-      exchange: exchangeAddress,
+      exchange: executorAddress,
       source: order.source,
       sign_scheme: order.sign_scheme,
     },
@@ -249,13 +249,13 @@ export function getOrderSignData(
  * @param withdraw - withdraw that user wants to sign
  * @param domain - starknet domain where exchange name and version and chain specified
  * @param tokenMapping -  maps ERC20Token to address onchain
- * @param exchangeAddress - address of an LayerAkira exchange
+ * @param coreAddress - address of an LayerAkira Core
  */
 export function getWithdrawSignData(
   withdraw: Withdraw,
   domain: StarknetDomain,
   tokenMapping?: TokenAddressMap,
-  exchangeAddress?: Address,
+  coreAddress?: Address,
 ): TypedData {
   return {
     types: withdrawType,
@@ -266,7 +266,7 @@ export function getWithdrawSignData(
       token: tokenMapping ? tokenMapping[withdraw.token] : withdraw.token,
       amount: uint256.bnToUint256(withdraw.amount),
       gas_fee: _prepareGas(withdraw.gas_fee, tokenMapping),
-      exchange: exchangeAddress,
+      exchange: coreAddress,
       sign_scheme: withdraw.sign_scheme,
     },
   };
