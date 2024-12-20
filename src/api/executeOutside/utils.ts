@@ -114,12 +114,12 @@ export function buildExecuteOutsidePrimitives(
       external_funds: order.flags.external_funds,
     },
     source: order.source,
+    sign_scheme: order.sign_scheme,
   };
   const routerSignCalldata = {
     0: BigInt(routerSignature[0]),
     1: BigInt(routerSignature[1]),
   };
-  console.log(JSON.stringify(orderCalldata, bigIntReplacer));
 
   const placeOnchainCall = exchange.populate("placeTakerOrder", [
     orderCalldata,

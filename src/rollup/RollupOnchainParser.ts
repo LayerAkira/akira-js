@@ -1,7 +1,7 @@
 import { AbiEntry, CallData, FunctionAbi } from "starknet";
-import akiraAbi from "./layer-akira.json";
+import executorAbi from "../api/contract/abi/executor.json";
 import { Address } from "../types";
-import { FixedFee, GasFee, STPMode } from "../request_types";
+import { FixedFee, GasFee, SignScheme, STPMode } from "../request_types";
 import { normalize } from "../api/websocket/utils";
 import {
   getOrderSignData,
@@ -61,6 +61,7 @@ export interface RollupOrderDetails {
     external_funds: boolean;
   };
   source: string;
+  sign_scheme: SignScheme;
   orderHash: string;
 }
 
@@ -145,10 +146,11 @@ export function castToType(orderRaw: any): RollupOrderDetails {
       nonce: Number(constraints.nonce),
       router_signer: normalize(constraints.router_signer),
     },
+    sign_scheme: orderRaw.sign_scheme,
   };
 }
 
-const abiCallData = new CallData(akiraAbi);
+const abiCallData = new CallData(executorAbi);
 
 /**
  * Class for parsing rollup input data for the `apply_steps` function

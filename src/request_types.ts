@@ -25,7 +25,8 @@ export enum OrderStatus {
 export enum SignScheme {
   ECDSA = "ecdsa curve",
   ACCOUNT = "account",
-  DIRECT = "",
+  DIRECT = "direct",
+  NOT_SPECIFIED = "",
   //..
 }
 

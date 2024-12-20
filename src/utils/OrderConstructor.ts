@@ -90,6 +90,7 @@ export class OrderConstructor {
    * @param conversionRate the rate [base gas, gasFeeToken]
    * @param durationValid The validity duration of the order.
    * @param traderNonce The nonce of the trader (optional). if not specified default from constructor would be used
+   * @param signScheme
    * @returns The constructed order.
    */
   public buildSimpleRouterSwap(

@@ -1,0 +1,765 @@
+[
+  {
+    "name": "RoutableImpl",
+    "type": "impl",
+    "interface_name": "kurosawa_akira::RouterComponent::IRouter"
+  },
+  {
+    "name": "core::integer::u256",
+    "type": "struct",
+    "members": [
+      {
+        "name": "low",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "high",
+        "type": "core::integer::u128"
+      }
+    ]
+  },
+  {
+    "name": "core::bool",
+    "type": "enum",
+    "variants": [
+      {
+        "name": "False",
+        "type": "()"
+      },
+      {
+        "name": "True",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "name": "kurosawa_akira::RouterComponent::IRouter",
+    "type": "interface",
+    "items": [
+      {
+        "name": "get_base_token",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "router_deposit",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "router",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "coin",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "amount",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "router_withdraw",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "coin",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "amount",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "receiver",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "register_router",
+        "type": "function",
+        "inputs": [],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "add_router_binding",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "signer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "request_onchain_deregister",
+        "type": "function",
+        "inputs": [],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "apply_onchain_deregister",
+        "type": "function",
+        "inputs": [],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "validate_router",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "message",
+            "type": "core::felt252"
+          },
+          {
+            "name": "signature",
+            "type": "(core::felt252, core::felt252)"
+          },
+          {
+            "name": "signer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "router",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "get_punishment_factor_bips",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::integer::u16"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "is_registered",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "router",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "have_sufficient_amount_to_route",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "router",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "balance_of_router",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "router",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "coin",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "get_router",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "signer",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "get_route_amount",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "name": "AccsesorableImpl",
+    "type": "impl",
+    "interface_name": "kurosawa_akira::AccessorComponent::IAccesorableImpl"
+  },
+  {
+    "name": "kurosawa_akira::AccessorComponent::IAccesorableImpl",
+    "type": "interface",
+    "items": [
+      {
+        "name": "get_approved_executor",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "user",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "(core::starknet::contract_address::ContractAddress, core::integer::u16)"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "is_approved_executor",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "user",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "get_owner",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "get_executor",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "(core::starknet::contract_address::ContractAddress, core::integer::u16)"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "set_owner",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "new_owner",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "set_executor",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "new_executor",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "grant_access_to_executor",
+        "type": "function",
+        "inputs": [],
+        "outputs": [],
+        "state_mutability": "external"
+      }
+    ]
+  },
+  {
+    "name": "kurosawa_akira::utils::SlowModeLogic::SlowModeDelay",
+    "type": "struct",
+    "members": [
+      {
+        "name": "block",
+        "type": "core::integer::u64"
+      },
+      {
+        "name": "ts",
+        "type": "core::integer::u64"
+      }
+    ]
+  },
+  {
+    "name": "constructor",
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "wrapped_native_token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "max_slow_mode_delay",
+        "type": "kurosawa_akira::utils::SlowModeLogic::SlowModeDelay"
+      },
+      {
+        "name": "min_to_route",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "owner",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "core_address",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "name": "update_base_token",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "new_base_token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ],
+    "outputs": [],
+    "state_mutability": "external"
+  },
+  {
+    "name": "update_router_component_params",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "new_delay",
+        "type": "kurosawa_akira::utils::SlowModeLogic::SlowModeDelay"
+      },
+      {
+        "name": "min_amount_to_route",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "new_punishment_bips",
+        "type": "core::integer::u16"
+      }
+    ],
+    "outputs": [],
+    "state_mutability": "external"
+  },
+  {
+    "name": "transfer_to_core",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "router",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "amount",
+        "type": "core::integer::u256"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "core::integer::u256"
+      }
+    ],
+    "state_mutability": "external"
+  },
+  {
+    "kind": "struct",
+    "name": "kurosawa_akira::RouterComponent::router_component::Deposit",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "router",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "key",
+        "name": "token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "funder",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "amount",
+        "type": "core::integer::u256"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "kurosawa_akira::RouterComponent::router_component::Withdraw",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "router",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "key",
+        "name": "token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "amount",
+        "type": "core::integer::u256"
+      },
+      {
+        "kind": "data",
+        "name": "receiver",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "kurosawa_akira::RouterComponent::router_component::RouterRegistration",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "router",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "status",
+        "type": "core::integer::u8"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "kurosawa_akira::RouterComponent::router_component::Binding",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "router",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "key",
+        "name": "signer",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "is_added",
+        "type": "core::bool"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "kurosawa_akira::RouterComponent::router_component::RouterMint",
+    "type": "event",
+    "members": [
+      {
+        "kind": "data",
+        "name": "token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "router",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "amount",
+        "type": "core::integer::u256"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "kurosawa_akira::RouterComponent::router_component::RouterBurn",
+    "type": "event",
+    "members": [
+      {
+        "kind": "data",
+        "name": "router",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "amount",
+        "type": "core::integer::u256"
+      }
+    ]
+  },
+  {
+    "kind": "enum",
+    "name": "kurosawa_akira::RouterComponent::router_component::Event",
+    "type": "event",
+    "variants": [
+      {
+        "kind": "nested",
+        "name": "Deposit",
+        "type": "kurosawa_akira::RouterComponent::router_component::Deposit"
+      },
+      {
+        "kind": "nested",
+        "name": "Withdraw",
+        "type": "kurosawa_akira::RouterComponent::router_component::Withdraw"
+      },
+      {
+        "kind": "nested",
+        "name": "RouterRegistration",
+        "type": "kurosawa_akira::RouterComponent::router_component::RouterRegistration"
+      },
+      {
+        "kind": "nested",
+        "name": "Binding",
+        "type": "kurosawa_akira::RouterComponent::router_component::Binding"
+      },
+      {
+        "kind": "nested",
+        "name": "RouterMint",
+        "type": "kurosawa_akira::RouterComponent::router_component::RouterMint"
+      },
+      {
+        "kind": "nested",
+        "name": "RouterBurn",
+        "type": "kurosawa_akira::RouterComponent::router_component::RouterBurn"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "kurosawa_akira::LayerAkiraExternalGrantor::LayerAkiraExternalGrantor::UpdateExchangeInvoker",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "invoker",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "enabled",
+        "type": "core::bool"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "kurosawa_akira::LayerAkiraExternalGrantor::LayerAkiraExternalGrantor::BaseTokenUpdate",
+    "type": "event",
+    "members": [
+      {
+        "kind": "data",
+        "name": "new_base_token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "kurosawa_akira::LayerAkiraExternalGrantor::LayerAkiraExternalGrantor::RouterComponentUpdate",
+    "type": "event",
+    "members": [
+      {
+        "kind": "data",
+        "name": "new_delay",
+        "type": "kurosawa_akira::utils::SlowModeLogic::SlowModeDelay"
+      },
+      {
+        "kind": "data",
+        "name": "min_amount_to_route",
+        "type": "core::integer::u256"
+      },
+      {
+        "kind": "data",
+        "name": "new_punishment_bips",
+        "type": "core::integer::u16"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "kurosawa_akira::AccessorComponent::accessor_logic_component::OwnerChanged",
+    "type": "event",
+    "members": [
+      {
+        "kind": "data",
+        "name": "new_owner",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "kurosawa_akira::AccessorComponent::accessor_logic_component::ExecutorChanged",
+    "type": "event",
+    "members": [
+      {
+        "kind": "data",
+        "name": "new_executor",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "new_epoch",
+        "type": "core::integer::u16"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "kurosawa_akira::AccessorComponent::accessor_logic_component::ApprovalGranted",
+    "type": "event",
+    "members": [
+      {
+        "kind": "data",
+        "name": "user",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "key",
+        "name": "executor",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "epoch",
+        "type": "core::integer::u16"
+      }
+    ]
+  },
+  {
+    "kind": "enum",
+    "name": "kurosawa_akira::AccessorComponent::accessor_logic_component::Event",
+    "type": "event",
+    "variants": [
+      {
+        "kind": "nested",
+        "name": "OwnerChanged",
+        "type": "kurosawa_akira::AccessorComponent::accessor_logic_component::OwnerChanged"
+      },
+      {
+        "kind": "nested",
+        "name": "ExecutorChanged",
+        "type": "kurosawa_akira::AccessorComponent::accessor_logic_component::ExecutorChanged"
+      },
+      {
+        "kind": "nested",
+        "name": "ApprovalGranted",
+        "type": "kurosawa_akira::AccessorComponent::accessor_logic_component::ApprovalGranted"
+      }
+    ]
+  },
+  {
+    "kind": "enum",
+    "name": "kurosawa_akira::LayerAkiraExternalGrantor::LayerAkiraExternalGrantor::Event",
+    "type": "event",
+    "variants": [
+      {
+        "kind": "nested",
+        "name": "RouterEvent",
+        "type": "kurosawa_akira::RouterComponent::router_component::Event"
+      },
+      {
+        "kind": "nested",
+        "name": "UpdateExchangeInvoker",
+        "type": "kurosawa_akira::LayerAkiraExternalGrantor::LayerAkiraExternalGrantor::UpdateExchangeInvoker"
+      },
+      {
+        "kind": "nested",
+        "name": "BaseTokenUpdate",
+        "type": "kurosawa_akira::LayerAkiraExternalGrantor::LayerAkiraExternalGrantor::BaseTokenUpdate"
+      },
+      {
+        "kind": "nested",
+        "name": "RouterComponentUpdate",
+        "type": "kurosawa_akira::LayerAkiraExternalGrantor::LayerAkiraExternalGrantor::RouterComponentUpdate"
+      },
+      {
+        "kind": "nested",
+        "name": "AccessorEvent",
+        "type": "kurosawa_akira::AccessorComponent::accessor_logic_component::Event"
+      }
+    ]
+  }
+]

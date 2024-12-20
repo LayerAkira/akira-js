@@ -1,6 +1,5 @@
 import { Address } from "../../types";
 import {
-  Abi,
   AbiEnums,
   AbiEvents,
   AbiStructs,
@@ -23,53 +22,84 @@ import {
   WithdrawalEvent,
 } from "./types";
 
+import routerAbi from "./abi/router.json";
+import executorAbi from "./abi/executor.json";
+import coreAbi from "./abi/core.json";
+
 /**
  * Class representing the LayerAkira exchange contract.
  */
 export class LayerAkiraContract {
-  public exchangeAddress: Address;
+  public coreAddress: Address;
+  public executorAddress: Address;
+  public routerAddress: Address;
 
-  public readonly contract: Contract;
   private readonly provider: RpcProvider;
-  private readonly abiEnums: AbiEnums;
-  private readonly abiEvents: AbiEvents;
-  private readonly abiStructs: AbiStructs;
+  private readonly abiEnums: Record<Address, AbiEnums>;
+  private readonly abiEvents: Record<Address, AbiEvents>;
+  private readonly abiStructs: Record<Address, AbiStructs>;
   private readonly withdrawComponentKey: string;
-  private readonly balancerComponentKey: string;
+  private readonly executorComponentKey: string;
   private readonly depositComponentKey: string;
+  private readonly coreContract: Contract;
+  private readonly routerContract: Contract;
+  private readonly executorContract: Contract;
 
   /**
    * Creates an instance of LayerAkira.
-   * @param exchangeAddress The address of the exchange contract.
-   * @param abi The ABI of the exchange contract.
+   * @param coreAddress
+   * @param executorAddress
+   * @param routerAddress
    * @param provider The RPC provider to interact with the contract.
    * @param withdrawComponentKey The component key for withdrawals.
-   * @param balancerComponentKey The component key for the balancer.
+   * @param executorComponentKey The component key for the balancer.
    * @param depositComponentKey The component key for deposits.
    */
   constructor(
-    exchangeAddress: Address,
-    abi: Abi,
+    coreAddress: Address,
+    executorAddress: Address,
+    routerAddress: Address,
     provider: RpcProvider,
     withdrawComponentKey?: string,
-    balancerComponentKey?: string,
+    executorComponentKey?: string,
     depositComponentKey?: string,
   ) {
-    this.exchangeAddress = exchangeAddress;
+    this.coreAddress = coreAddress;
+    this.executorAddress = executorAddress;
+    this.routerAddress = routerAddress;
     this.provider = provider;
-    this.contract = new Contract(abi, exchangeAddress, provider);
-    this.abiEvents = events.getAbiEvents(abi);
-    this.abiStructs = CallData.getAbiStruct(abi);
-    this.abiEnums = CallData.getAbiEnum(abi);
+    this.coreContract = new Contract(coreAbi, coreAddress, provider);
+    this.routerContract = new Contract(routerAbi, routerAddress, provider);
+    this.executorContract = new Contract(
+      executorAbi,
+      executorAddress,
+      provider,
+    );
+
+    this.abiEvents = {
+      [this.coreAddress]: events.getAbiEvents(coreAbi),
+      [this.executorAddress]: events.getAbiEvents(executorAbi),
+      [this.routerAddress]: events.getAbiEvents(routerAbi),
+    };
+    this.abiStructs = {
+      [this.coreAddress]: CallData.getAbiStruct(coreAbi),
+      [this.executorAddress]: CallData.getAbiStruct(executorAbi),
+      [this.routerAddress]: CallData.getAbiStruct(routerAbi),
+    };
+    this.abiEnums = {
+      [this.coreAddress]: CallData.getAbiEnum(coreAbi),
+      [this.executorAddress]: CallData.getAbiEnum(executorAbi),
+      [this.routerAddress]: CallData.getAbiEnum(routerAbi),
+    };
     this.withdrawComponentKey =
       withdrawComponentKey ??
       "0x263bb99782710eacf6e143ab001ce64dadd4fb8e0d913bac9c7997f01cb9402";
     this.depositComponentKey =
       depositComponentKey ??
       "0xa1db419bdf20c7726cf74c30394c4300e5645db4e3cacaf897da05faabae03";
-    this.balancerComponentKey =
-      balancerComponentKey ??
-      "0x22ea134d4126804c60797e633195f8c9aa5fd6d1567e299f4961d0e96f373ee";
+    this.executorComponentKey =
+      executorComponentKey ??
+      "0x02e47a55f75db3665729a0ab9fc02ef7227c697e1427cff3dc65c8ada44a2c31";
   }
 
   /**
@@ -85,7 +115,7 @@ export class LayerAkiraContract {
     callOptions?: CallOptions,
   ): Promise<Result<bigint>> {
     return await callContractMethod(
-      this.contract,
+      this.coreContract,
       "balanceOf",
       CallData.compile([traderAddress, tokenAddress]),
       callOptions ?? { blockIdentifier: "pending" },
@@ -103,7 +133,7 @@ export class LayerAkiraContract {
     callOptions?: CallOptions,
   ): Promise<Result<bigint>> {
     return await callContractMethod(
-      this.contract,
+      this.coreContract,
       "get_nonce",
       CallData.compile([traderAddress]),
       callOptions ?? { blockIdentifier: "pending" },
@@ -123,7 +153,7 @@ export class LayerAkiraContract {
     callOptions?: CallOptions,
   ): Promise<Result<bigint[]>> {
     const result = await callContractMethod(
-      this.contract,
+      this.coreContract,
       "balancesOf",
       CallData.compile([[traderAddress], tokenAddresses]),
       callOptions ?? { blockIdentifier: "pending" },
@@ -140,7 +170,7 @@ export class LayerAkiraContract {
     callOptions?: CallOptions,
   ): Promise<Result<Address>> {
     const result = await callContractMethod(
-      this.contract,
+      this.coreContract,
       "get_wrapped_native_token",
       CallData.compile([]),
       callOptions ?? { blockIdentifier: "pending" },
@@ -157,7 +187,7 @@ export class LayerAkiraContract {
     callOptions?: CallOptions,
   ): Promise<Result<Address>> {
     const result = await callContractMethod(
-      this.contract,
+      this.coreContract,
       "get_fee_recipient",
       CallData.compile([]),
       callOptions ?? { blockIdentifier: "pending" },
@@ -177,7 +207,7 @@ export class LayerAkiraContract {
     callOptions?: CallOptions,
   ): Promise<Result<OrderTradeInfo>> {
     return await callContractMethod(
-      this.contract,
+      this.executorContract,
       "get_ecosystem_trade_info",
       CallData.compile([orderHash]),
       callOptions ?? { blockIdentifier: "pending" },
@@ -209,7 +239,8 @@ export class LayerAkiraContract {
     }>
   > {
     let tradeEvents = (await this.getEvents(
-      this.balancerComponentKey,
+      this.executorAddress,
+      this.executorComponentKey,
       "Trade",
       [isMaker ? [trader] : [], isMaker ? [] : [trader]],
       fromBlock,
@@ -231,7 +262,7 @@ export class LayerAkiraContract {
       continuationToken,
       chunkSize,
       undefined,
-      "ExchangeBalanceComponent::exchange_balance_logic_component",
+      "BaseTradeComponent::base_trade_component",
     )) as Result<{ events: TradeEvent[]; continuationToken?: string }>;
     // https://github.com/NethermindEth/juno/issues/1922 due this need additional filtering for false positive
     if (tradeEvents.result)
@@ -264,7 +295,8 @@ export class LayerAkiraContract {
       continuationToken?: string;
     }>
   > {
-    let events = this.getEvents(
+    let events = (await this.getEvents(
+      this.coreAddress,
       this.withdrawComponentKey,
       "Withdrawal",
       [[trader]],
@@ -288,7 +320,7 @@ export class LayerAkiraContract {
       chunkSize,
       undefined,
       "WithdrawComponent::withdraw_component",
-    ) as Result<{ events: WithdrawalEvent[]; continuationToken?: string }>;
+    )) as Result<{ events: WithdrawalEvent[]; continuationToken?: string }>;
     if (events.result)
       events.result!.events = events.result.events.filter(
         (e) => BigInt(e.maker) === BigInt(trader),
@@ -319,6 +351,7 @@ export class LayerAkiraContract {
     }>
   > {
     let events = (await this.getEvents(
+      this.coreAddress,
       this.depositComponentKey,
       "Deposit",
       [[trader]],
@@ -346,6 +379,7 @@ export class LayerAkiraContract {
    * Fetches events for a given event in component within a specified block range.
    * Allows custom parsing of events based on the provided event name and parsing function.
    * @template T - The type of the parsed event.
+   * @param address
    * @param componentKey - The key of the component to fetch events for.
    * @param eventName - The name of the event to fetch.
    * @param restKeys - Additional keys to filter events.
@@ -355,9 +389,11 @@ export class LayerAkiraContract {
    * @param continuationToken - Optional token to continue fetching events from where the last request left off.
    * @param chunkSize - Optional number of events to fetch per request (default is 10).
    * @param abiEvents - Optional ABI events to use for parsing.
+   * @param componentName
    * @returns A promise that resolves to a Result object containing an array of parsed events and an optional continuation token.
    */
   private async getEvents<T>(
+    address: Address,
     componentKey: string,
     eventName: string,
     restKeys: string[][],
@@ -376,7 +412,7 @@ export class LayerAkiraContract {
   > {
     try {
       const result = await this.provider.getEvents({
-        address: this.exchangeAddress,
+        address,
         from_block:
           fromBlock == "latest" || fromBlock == "pending"
             ? fromBlock
@@ -393,16 +429,12 @@ export class LayerAkiraContract {
         chunk_size: chunkSize,
         continuation_token: continuationToken,
       });
-      // due this and since we use nested components https://github.com/starknet-io/starknet.js/issues/1134
-      // result.events.forEach((evt) => {
-      //   evt.keys.shift();
-      // });
-      console.log(result.events);
+
       const parsedEvents = events.parseEvents(
         result.events,
-        abiEvents ?? this.abiEvents,
-        this.abiStructs,
-        this.abiEnums,
+        abiEvents ?? this.abiEvents[address],
+        this.abiStructs[address],
+        this.abiEnums[address],
       );
       const evts = parsedEvents.map((parsedEvt: any, index) =>
         parseEvent({
@@ -415,6 +447,7 @@ export class LayerAkiraContract {
         result: { events: evts, continuationToken: result.continuation_token },
       };
     } catch (e: any) {
+      console.log(this.abiStructs);
       return { code: ExceptionIssueCode, exception: e };
     }
   }
