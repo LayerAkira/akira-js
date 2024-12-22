@@ -11,8 +11,9 @@ export interface SDKConfiguration {
   apiBaseUrl: string;
   wssPath: string;
   tokenMapping: TokenAddressMap; // maps ERC20Token alias to it address in chain
-  exchangeAddress: Address;
-  exchangeAbi: Abi;
+  coreAddress: Address;
+  executorAddress: Address;
+  routerAddress: Address;
   baseFeeToken: ERC20Token;
 
   jwt?: string;
@@ -54,8 +55,9 @@ export class LayerAkiraSDK {
       config.logger,
     );
     this.akiraContract = new LayerAkiraContract(
-      config.exchangeAddress,
-      config.exchangeAbi,
+      config.coreAddress,
+      config.executorAddress,
+      config.routerAddress,
       new RpcProvider({ nodeUrl: rpcUrlProvider }),
     );
   }

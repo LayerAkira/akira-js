@@ -1,0 +1,1020 @@
+[
+  {
+    "name": "BaseOrderTradableImpl",
+    "type": "impl",
+    "interface_name": "kurosawa_akira::BaseTradeComponent::IBaseOrderTradeLogic"
+  },
+  {
+    "name": "core::integer::u256",
+    "type": "struct",
+    "members": [
+      {
+        "name": "low",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "high",
+        "type": "core::integer::u128"
+      }
+    ]
+  },
+  {
+    "name": "core::bool",
+    "type": "enum",
+    "variants": [
+      {
+        "name": "False",
+        "type": "()"
+      },
+      {
+        "name": "True",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "name": "kurosawa_akira::Order::OrderTradeInfo",
+    "type": "struct",
+    "members": [
+      {
+        "name": "filled_base_amount",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "filled_quote_amount",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "last_traded_px",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "num_trades_happened",
+        "type": "core::integer::u16"
+      },
+      {
+        "name": "as_taker_completed",
+        "type": "core::bool"
+      }
+    ]
+  },
+  {
+    "name": "kurosawa_akira::BaseTradeComponent::IBaseOrderTradeLogic",
+    "type": "interface",
+    "items": [
+      {
+        "name": "get_ecosystem_trade_info",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "order_hash",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "kurosawa_akira::Order::OrderTradeInfo"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "get_ecosystem_trades_info",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "order_hashes",
+            "type": "core::array::Array::<core::felt252>"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::array::Array::<kurosawa_akira::Order::OrderTradeInfo>"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "name": "SORTradableImpl",
+    "type": "impl",
+    "interface_name": "kurosawa_akira::SORTradeComponent::ISORTradeLogic"
+  },
+  {
+    "name": "kurosawa_akira::SORTradeComponent::ISORTradeLogic",
+    "type": "interface",
+    "items": []
+  },
+  {
+    "name": "constructor",
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "core_address",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "router_address",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "fee_recipient",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "base_token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "owner",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "name": "update_exchange_invokers",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "invoker",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "enabled",
+        "type": "core::bool"
+      }
+    ],
+    "outputs": [],
+    "state_mutability": "external"
+  },
+  {
+    "name": "update_fee_recipient",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "new_fee_recipient",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ],
+    "outputs": [],
+    "state_mutability": "external"
+  },
+  {
+    "name": "update_base_token",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "new_base_token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ],
+    "outputs": [],
+    "state_mutability": "external"
+  },
+  {
+    "name": "kurosawa_akira::Order::Quantity",
+    "type": "struct",
+    "members": [
+      {
+        "name": "base_qty",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "quote_qty",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "base_asset",
+        "type": "core::integer::u256"
+      }
+    ]
+  },
+  {
+    "name": "kurosawa_akira::Order::FixedFee",
+    "type": "struct",
+    "members": [
+      {
+        "name": "recipient",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "maker_pbips",
+        "type": "core::integer::u32"
+      },
+      {
+        "name": "taker_pbips",
+        "type": "core::integer::u32"
+      },
+      {
+        "name": "apply_to_receipt_amount",
+        "type": "core::bool"
+      }
+    ]
+  },
+  {
+    "name": "kurosawa_akira::Order::GasFee",
+    "type": "struct",
+    "members": [
+      {
+        "name": "gas_per_action",
+        "type": "core::integer::u32"
+      },
+      {
+        "name": "fee_token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "max_gas_price",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "conversion_rate",
+        "type": "(core::integer::u256, core::integer::u256)"
+      }
+    ]
+  },
+  {
+    "name": "kurosawa_akira::Order::OrderFee",
+    "type": "struct",
+    "members": [
+      {
+        "name": "trade_fee",
+        "type": "kurosawa_akira::Order::FixedFee"
+      },
+      {
+        "name": "router_fee",
+        "type": "kurosawa_akira::Order::FixedFee"
+      },
+      {
+        "name": "gas_fee",
+        "type": "kurosawa_akira::Order::GasFee"
+      }
+    ]
+  },
+  {
+    "name": "kurosawa_akira::Order::TakerSelfTradePreventionMode",
+    "type": "enum",
+    "variants": [
+      {
+        "name": "NONE",
+        "type": "()"
+      },
+      {
+        "name": "EXPIRE_TAKER",
+        "type": "()"
+      },
+      {
+        "name": "EXPIRE_MAKER",
+        "type": "()"
+      },
+      {
+        "name": "EXPIRE_BOTH",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "name": "kurosawa_akira::Order::Constraints",
+    "type": "struct",
+    "members": [
+      {
+        "name": "number_of_swaps_allowed",
+        "type": "core::integer::u16"
+      },
+      {
+        "name": "duration_valid",
+        "type": "core::integer::u32"
+      },
+      {
+        "name": "created_at",
+        "type": "core::integer::u32"
+      },
+      {
+        "name": "stp",
+        "type": "kurosawa_akira::Order::TakerSelfTradePreventionMode"
+      },
+      {
+        "name": "nonce",
+        "type": "core::integer::u32"
+      },
+      {
+        "name": "min_receive_amount",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "router_signer",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "name": "kurosawa_akira::Order::OrderFlags",
+    "type": "struct",
+    "members": [
+      {
+        "name": "full_fill_only",
+        "type": "core::bool"
+      },
+      {
+        "name": "best_level_only",
+        "type": "core::bool"
+      },
+      {
+        "name": "post_only",
+        "type": "core::bool"
+      },
+      {
+        "name": "is_sell_side",
+        "type": "core::bool"
+      },
+      {
+        "name": "is_market_order",
+        "type": "core::bool"
+      },
+      {
+        "name": "to_ecosystem_book",
+        "type": "core::bool"
+      },
+      {
+        "name": "external_funds",
+        "type": "core::bool"
+      }
+    ]
+  },
+  {
+    "name": "kurosawa_akira::Order::Order",
+    "type": "struct",
+    "members": [
+      {
+        "name": "maker",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "price",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "qty",
+        "type": "kurosawa_akira::Order::Quantity"
+      },
+      {
+        "name": "ticker",
+        "type": "(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress)"
+      },
+      {
+        "name": "fee",
+        "type": "kurosawa_akira::Order::OrderFee"
+      },
+      {
+        "name": "constraints",
+        "type": "kurosawa_akira::Order::Constraints"
+      },
+      {
+        "name": "salt",
+        "type": "core::felt252"
+      },
+      {
+        "name": "flags",
+        "type": "kurosawa_akira::Order::OrderFlags"
+      },
+      {
+        "name": "source",
+        "type": "core::felt252"
+      },
+      {
+        "name": "sign_scheme",
+        "type": "core::felt252"
+      }
+    ]
+  },
+  {
+    "name": "get_order_hash",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "order",
+        "type": "kurosawa_akira::Order::Order"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "core::felt252"
+      }
+    ],
+    "state_mutability": "view"
+  },
+  {
+    "name": "kurosawa_akira::NonceComponent::IncreaseNonce",
+    "type": "struct",
+    "members": [
+      {
+        "name": "maker",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "new_nonce",
+        "type": "core::integer::u32"
+      },
+      {
+        "name": "gas_fee",
+        "type": "kurosawa_akira::Order::GasFee"
+      },
+      {
+        "name": "salt",
+        "type": "core::felt252"
+      },
+      {
+        "name": "sign_scheme",
+        "type": "core::felt252"
+      }
+    ]
+  },
+  {
+    "name": "core::array::Span::<core::felt252>",
+    "type": "struct",
+    "members": [
+      {
+        "name": "snapshot",
+        "type": "@core::array::Array::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "name": "kurosawa_akira::NonceComponent::SignedIncreaseNonce",
+    "type": "struct",
+    "members": [
+      {
+        "name": "increase_nonce",
+        "type": "kurosawa_akira::NonceComponent::IncreaseNonce"
+      },
+      {
+        "name": "sign",
+        "type": "core::array::Span::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "name": "apply_increase_nonce",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "signed_nonce",
+        "type": "kurosawa_akira::NonceComponent::SignedIncreaseNonce"
+      },
+      {
+        "name": "gas_price",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "cur_gas_per_action",
+        "type": "core::integer::u32"
+      }
+    ],
+    "outputs": [],
+    "state_mutability": "external"
+  },
+  {
+    "name": "apply_increase_nonces",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "signed_nonces",
+        "type": "core::array::Array::<kurosawa_akira::NonceComponent::SignedIncreaseNonce>"
+      },
+      {
+        "name": "gas_price",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "cur_gas_per_action",
+        "type": "core::integer::u32"
+      }
+    ],
+    "outputs": [],
+    "state_mutability": "external"
+  },
+  {
+    "name": "kurosawa_akira::WithdrawComponent::Withdraw",
+    "type": "struct",
+    "members": [
+      {
+        "name": "maker",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "amount",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "salt",
+        "type": "core::felt252"
+      },
+      {
+        "name": "gas_fee",
+        "type": "kurosawa_akira::Order::GasFee"
+      },
+      {
+        "name": "receiver",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "sign_scheme",
+        "type": "core::felt252"
+      }
+    ]
+  },
+  {
+    "name": "kurosawa_akira::WithdrawComponent::SignedWithdraw",
+    "type": "struct",
+    "members": [
+      {
+        "name": "withdraw",
+        "type": "kurosawa_akira::WithdrawComponent::Withdraw"
+      },
+      {
+        "name": "sign",
+        "type": "core::array::Span::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "name": "apply_withdraw",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "signed_withdraw",
+        "type": "kurosawa_akira::WithdrawComponent::SignedWithdraw"
+      },
+      {
+        "name": "gas_price",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "cur_gas_per_action",
+        "type": "core::integer::u32"
+      }
+    ],
+    "outputs": [],
+    "state_mutability": "external"
+  },
+  {
+    "name": "apply_withdraws",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "signed_withdraws",
+        "type": "core::array::Array::<kurosawa_akira::WithdrawComponent::SignedWithdraw>"
+      },
+      {
+        "name": "gas_price",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "cur_gas_per_action",
+        "type": "core::integer::u32"
+      }
+    ],
+    "outputs": [],
+    "state_mutability": "external"
+  },
+  {
+    "name": "kurosawa_akira::Order::SignedOrder",
+    "type": "struct",
+    "members": [
+      {
+        "name": "order",
+        "type": "kurosawa_akira::Order::Order"
+      },
+      {
+        "name": "sign",
+        "type": "core::array::Span::<core::felt252>"
+      },
+      {
+        "name": "router_sign",
+        "type": "(core::felt252, core::felt252)"
+      }
+    ]
+  },
+  {
+    "name": "apply_ecosystem_trades",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "taker_orders",
+        "type": "core::array::Array::<(kurosawa_akira::Order::SignedOrder, core::bool)>"
+      },
+      {
+        "name": "maker_orders",
+        "type": "core::array::Array::<kurosawa_akira::Order::SignedOrder>"
+      },
+      {
+        "name": "iters",
+        "type": "core::array::Array::<(core::integer::u16, core::bool)>"
+      },
+      {
+        "name": "oracle_settled_qty",
+        "type": "core::array::Array::<core::integer::u256>"
+      },
+      {
+        "name": "gas_price",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "cur_gas_per_action",
+        "type": "core::integer::u32"
+      }
+    ],
+    "outputs": [],
+    "state_mutability": "external"
+  },
+  {
+    "name": "apply_single_execution_step",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "taker_order",
+        "type": "kurosawa_akira::Order::SignedOrder"
+      },
+      {
+        "name": "maker_orders",
+        "type": "core::array::Array::<(kurosawa_akira::Order::SignedOrder, core::integer::u256)>"
+      },
+      {
+        "name": "total_amount_matched",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "gas_price",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "cur_gas_per_action",
+        "type": "core::integer::u32"
+      },
+      {
+        "name": "as_taker_completed",
+        "type": "core::bool"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "core::bool"
+      }
+    ],
+    "state_mutability": "external"
+  },
+  {
+    "name": "apply_execution_steps",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "bulk",
+        "type": "core::array::Array::<(kurosawa_akira::Order::SignedOrder, core::array::Array::<(kurosawa_akira::Order::SignedOrder, core::integer::u256)>, core::integer::u256, core::bool)>"
+      },
+      {
+        "name": "gas_price",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "cur_gas_per_action",
+        "type": "core::integer::u32"
+      }
+    ],
+    "outputs": [
+      {
+        "type": "core::array::Array::<core::bool>"
+      }
+    ],
+    "state_mutability": "external"
+  },
+  {
+    "name": "placeTakerOrder",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "order",
+        "type": "kurosawa_akira::Order::Order"
+      },
+      {
+        "name": "router_sign",
+        "type": "(core::felt252, core::felt252)"
+      }
+    ],
+    "outputs": [],
+    "state_mutability": "external"
+  },
+  {
+    "name": "fullfillTakerOrder",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "maker_orders",
+        "type": "core::array::Array::<(kurosawa_akira::Order::SignedOrder, core::integer::u256)>"
+      },
+      {
+        "name": "total_amount_matched",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "gas_steps",
+        "type": "core::integer::u32"
+      },
+      {
+        "name": "gas_price",
+        "type": "core::integer::u256"
+      }
+    ],
+    "outputs": [],
+    "state_mutability": "external"
+  },
+  {
+    "name": "kurosawa_akira::LayerAkiraExecutor::LayerAkiraExecutor::Step",
+    "type": "enum",
+    "variants": [
+      {
+        "name": "BulkExecutionSteps",
+        "type": "(core::array::Array::<(kurosawa_akira::Order::SignedOrder, core::array::Array::<(kurosawa_akira::Order::SignedOrder, core::integer::u256)>, core::integer::u256, core::bool)>, core::bool)"
+      },
+      {
+        "name": "SingleExecutionStep",
+        "type": "((kurosawa_akira::Order::SignedOrder, core::array::Array::<(kurosawa_akira::Order::SignedOrder, core::integer::u256)>, core::integer::u256, core::bool), core::bool)"
+      },
+      {
+        "name": "EcosystemTrades",
+        "type": "(core::array::Array::<(kurosawa_akira::Order::SignedOrder, core::bool)>, core::array::Array::<kurosawa_akira::Order::SignedOrder>, core::array::Array::<(core::integer::u16, core::bool)>, core::array::Array::<core::integer::u256>)"
+      },
+      {
+        "name": "IncreaseNonceStep",
+        "type": "kurosawa_akira::NonceComponent::SignedIncreaseNonce"
+      },
+      {
+        "name": "WithdrawStep",
+        "type": "kurosawa_akira::WithdrawComponent::SignedWithdraw"
+      }
+    ]
+  },
+  {
+    "name": "apply_steps",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "steps",
+        "type": "core::array::Array::<kurosawa_akira::LayerAkiraExecutor::LayerAkiraExecutor::Step>"
+      },
+      {
+        "name": "nonce_steps",
+        "type": "core::integer::u32"
+      },
+      {
+        "name": "withdraw_steps",
+        "type": "core::integer::u32"
+      },
+      {
+        "name": "router_steps",
+        "type": "core::integer::u32"
+      },
+      {
+        "name": "ecosystem_steps",
+        "type": "core::integer::u32"
+      },
+      {
+        "name": "gas_price",
+        "type": "core::integer::u256"
+      }
+    ],
+    "outputs": [],
+    "state_mutability": "external"
+  },
+  {
+    "kind": "struct",
+    "name": "kurosawa_akira::BaseTradeComponent::base_trade_component::FeeReward",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "recipient",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "amount",
+        "type": "core::integer::u256"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "kurosawa_akira::BaseTradeComponent::base_trade_component::Punish",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "router",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "taker_hash",
+        "type": "core::felt252"
+      },
+      {
+        "kind": "data",
+        "name": "maker_hash",
+        "type": "core::felt252"
+      },
+      {
+        "kind": "data",
+        "name": "amount",
+        "type": "core::integer::u256"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "kurosawa_akira::BaseTradeComponent::base_trade_component::Trade",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "maker",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "key",
+        "name": "taker",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "ticker",
+        "type": "(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress)"
+      },
+      {
+        "kind": "data",
+        "name": "router_maker",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "router_taker",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "amount_base",
+        "type": "core::integer::u256"
+      },
+      {
+        "kind": "data",
+        "name": "amount_quote",
+        "type": "core::integer::u256"
+      },
+      {
+        "kind": "data",
+        "name": "is_sell_side",
+        "type": "core::bool"
+      },
+      {
+        "kind": "data",
+        "name": "is_failed",
+        "type": "core::bool"
+      },
+      {
+        "kind": "data",
+        "name": "is_ecosystem_book",
+        "type": "core::bool"
+      },
+      {
+        "kind": "data",
+        "name": "maker_hash",
+        "type": "core::felt252"
+      },
+      {
+        "kind": "data",
+        "name": "taker_hash",
+        "type": "core::felt252"
+      },
+      {
+        "kind": "data",
+        "name": "maker_source",
+        "type": "core::felt252"
+      },
+      {
+        "kind": "data",
+        "name": "taker_source",
+        "type": "core::felt252"
+      }
+    ]
+  },
+  {
+    "kind": "enum",
+    "name": "kurosawa_akira::BaseTradeComponent::base_trade_component::Event",
+    "type": "event",
+    "variants": [
+      {
+        "kind": "nested",
+        "name": "FeeReward",
+        "type": "kurosawa_akira::BaseTradeComponent::base_trade_component::FeeReward"
+      },
+      {
+        "kind": "nested",
+        "name": "Punish",
+        "type": "kurosawa_akira::BaseTradeComponent::base_trade_component::Punish"
+      },
+      {
+        "kind": "nested",
+        "name": "Trade",
+        "type": "kurosawa_akira::BaseTradeComponent::base_trade_component::Trade"
+      }
+    ]
+  },
+  {
+    "kind": "enum",
+    "name": "kurosawa_akira::SORTradeComponent::sor_trade_component::Event",
+    "type": "event",
+    "variants": []
+  },
+  {
+    "kind": "struct",
+    "name": "kurosawa_akira::LayerAkiraExecutor::LayerAkiraExecutor::UpdateExchangeInvoker",
+    "type": "event",
+    "members": [
+      {
+        "kind": "key",
+        "name": "invoker",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "kind": "data",
+        "name": "enabled",
+        "type": "core::bool"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "kurosawa_akira::LayerAkiraExecutor::LayerAkiraExecutor::BaseTokenUpdate",
+    "type": "event",
+    "members": [
+      {
+        "kind": "data",
+        "name": "new_base_token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "name": "kurosawa_akira::LayerAkiraExecutor::LayerAkiraExecutor::FeeRecipientUpdate",
+    "type": "event",
+    "members": [
+      {
+        "kind": "data",
+        "name": "new_fee_recipient",
+        "type": "core::starknet::contract_address::ContractAddress"
+      }
+    ]
+  },
+  {
+    "kind": "enum",
+    "name": "kurosawa_akira::LayerAkiraExecutor::LayerAkiraExecutor::Event",
+    "type": "event",
+    "variants": [
+      {
+        "kind": "nested",
+        "name": "BaseTradeEvent",
+        "type": "kurosawa_akira::BaseTradeComponent::base_trade_component::Event"
+      },
+      {
+        "kind": "nested",
+        "name": "SORTradeEvent",
+        "type": "kurosawa_akira::SORTradeComponent::sor_trade_component::Event"
+      },
+      {
+        "kind": "nested",
+        "name": "UpdateExchangeInvoker",
+        "type": "kurosawa_akira::LayerAkiraExecutor::LayerAkiraExecutor::UpdateExchangeInvoker"
+      },
+      {
+        "kind": "nested",
+        "name": "BaseTokenUpdate",
+        "type": "kurosawa_akira::LayerAkiraExecutor::LayerAkiraExecutor::BaseTokenUpdate"
+      },
+      {
+        "kind": "nested",
+        "name": "FeeRecipientUpdate",
+        "type": "kurosawa_akira::LayerAkiraExecutor::LayerAkiraExecutor::FeeRecipientUpdate"
+      }
+    ]
+  }
+]

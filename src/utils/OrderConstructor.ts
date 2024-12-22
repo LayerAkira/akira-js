@@ -6,6 +6,7 @@ import {
   Order,
   OrderSide,
   Quantity,
+  SignScheme,
   STPMode,
   TradedPair,
 } from "../request_types";
@@ -30,6 +31,7 @@ export class OrderConstructor {
   private readonly routerFeeMap: TickerFeeMap;
   private readonly routerFeeRecipient: Address;
   private source: string;
+  private signScheme: SignScheme;
 
   /**
    * Creates an instance of OrderConstructor.
@@ -44,6 +46,7 @@ export class OrderConstructor {
    * @param routerFeeMap The map containing router fees (default is an empty map).
    * @param routerSigner The address of the router signer (default is NULL_ADDRESS).
    * @param routerFeeRecipient The address of the router fee recipient (default is NULL_ADDRESS).
+   * @param sign_scheme
    */
   constructor(
     trader: Address,
@@ -57,6 +60,7 @@ export class OrderConstructor {
     routerFeeMap: TickerFeeMap = new TickerFeeMap([0, 0]),
     routerSigner: Address = NULL_ADDRESS,
     routerFeeRecipient: Address = NULL_ADDRESS,
+    sign_scheme: SignScheme = SignScheme.ECDSA,
   ) {
     this.trader = trader;
     this.routerSigner = routerSigner;
@@ -69,6 +73,7 @@ export class OrderConstructor {
     this.routerGasSteps = routerGasSteps;
     this.nativeGasFeeToken = nativeGasFeeToken;
     this.source = source;
+    this.signScheme = sign_scheme;
   }
 
   /**
@@ -85,6 +90,7 @@ export class OrderConstructor {
    * @param conversionRate the rate [base gas, gasFeeToken]
    * @param durationValid The validity duration of the order.
    * @param traderNonce The nonce of the trader (optional). if not specified default from constructor would be used
+   * @param signScheme
    * @returns The constructed order.
    */
   public buildSimpleRouterSwap(
@@ -100,6 +106,7 @@ export class OrderConstructor {
     conversionRate?: [bigint, bigint],
     durationValid: number = 365 * 24 * 60 * 60,
     traderNonce?: number,
+    signScheme?: SignScheme,
   ) {
     return this.buildOrder(
       {
@@ -123,6 +130,7 @@ export class OrderConstructor {
       gasFeeToken,
       conversionRate,
       STPMode.NONE,
+      signScheme,
     );
   }
 
@@ -134,6 +142,7 @@ export class OrderConstructor {
    * @param side The side of the order (BUY or SELL).
    * @param durationValid The validity duration of the order.
    * @param traderNonce The nonce of the trader (optional). if not specified default from constructor would be used
+   * @param signScheme
    * @returns The constructed order.
    */
   public buildSimpleRestingOrder(
@@ -143,6 +152,7 @@ export class OrderConstructor {
     side: OrderSide,
     durationValid: number = 365 * 24 * 60 * 60,
     traderNonce?: number,
+    signScheme?: SignScheme,
   ) {
     return this.buildOrder(
       ticker,
@@ -163,6 +173,7 @@ export class OrderConstructor {
       this.nativeGasFeeToken,
       [1n, 1n],
       STPMode.NONE,
+      signScheme,
     );
   }
 
@@ -186,6 +197,7 @@ export class OrderConstructor {
    * @param gasFeeToken can be specified non-native token
    * @param conversionRate The conversion rate for the gas fee token if used non-native one.
    * @param stp The STP mode for the order.
+   * @param signScheme
    * @returns The constructed order.
    */
   public buildOrder(
@@ -207,6 +219,7 @@ export class OrderConstructor {
     gasFeeToken?: ERC20Token,
     conversionRate?: [bigint, bigint],
     stp?: STPMode,
+    signScheme?: SignScheme,
   ): Order {
     console.log(ticker, this.routerFeeMap.get(ticker));
     console.log(ticker, this.exchangeFeeMap.get(ticker), this.exchangeFeeMap);
@@ -255,6 +268,7 @@ export class OrderConstructor {
       salt: generateRandomSalt(),
       ticker: ticker.pair,
       source: this.source,
+      sign_scheme: signScheme ?? this.signScheme,
     };
   }
 

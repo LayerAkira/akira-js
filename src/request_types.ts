@@ -20,6 +20,17 @@ export enum OrderStatus {
 }
 
 /**
+ *
+ */
+export enum SignScheme {
+  ECDSA = "ecdsa curve",
+  ACCOUNT = "account",
+  DIRECT = "direct",
+  NOT_SPECIFIED = "",
+  //..
+}
+
+/**
  * Represents the erc20 token e.g. ETH
  */
 export type ERC20Token = string;
@@ -168,6 +179,7 @@ export interface Order {
   salt: bigint;
   flags: OrderFlags;
   source: string; // from where order
+  sign_scheme: SignScheme;
   snip9_call?: ExecuteOutsideCall;
 }
 
@@ -214,6 +226,7 @@ export interface IncreaseNonce {
   new_nonce: number;
   gas_fee: GasFee;
   salt: bigint;
+  sign_scheme: SignScheme;
 }
 
 /**
@@ -226,6 +239,7 @@ export interface Withdraw {
   salt: bigint;
   gas_fee: GasFee;
   receiver: Address;
+  sign_scheme: SignScheme;
 }
 
 /**

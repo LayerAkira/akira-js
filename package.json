@@ -1,6 +1,6 @@
 {
   "name": "layerakira-js",
-  "version": "1.0.1-beta.16",
+  "version": "1.0.1-beta.25",
   "description": "SDK for interaction with LayerAkira exchange",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
