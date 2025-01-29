@@ -91,6 +91,7 @@ export class OrderConstructor {
    * @param durationValid The validity duration of the order.
    * @param traderNonce The nonce of the trader (optional). if not specified default from constructor would be used
    * @param signScheme
+   * @param trader
    * @returns The constructed order.
    */
   public buildSimpleRouterSwap(
@@ -107,6 +108,7 @@ export class OrderConstructor {
     durationValid: number = 365 * 24 * 60 * 60,
     traderNonce?: number,
     signScheme?: SignScheme,
+    trader?: Address,
   ) {
     return this.buildOrder(
       {
@@ -131,6 +133,7 @@ export class OrderConstructor {
       conversionRate,
       STPMode.NONE,
       signScheme,
+      trader,
     );
   }
 
@@ -143,6 +146,7 @@ export class OrderConstructor {
    * @param durationValid The validity duration of the order.
    * @param traderNonce The nonce of the trader (optional). if not specified default from constructor would be used
    * @param signScheme
+   * @param trader
    * @returns The constructed order.
    */
   public buildSimpleRestingOrder(
@@ -153,6 +157,7 @@ export class OrderConstructor {
     durationValid: number = 365 * 24 * 60 * 60,
     traderNonce?: number,
     signScheme?: SignScheme,
+    trader?: Address,
   ) {
     return this.buildOrder(
       ticker,
@@ -174,6 +179,7 @@ export class OrderConstructor {
       [1n, 1n],
       STPMode.NONE,
       signScheme,
+      trader,
     );
   }
 
@@ -198,6 +204,7 @@ export class OrderConstructor {
    * @param conversionRate The conversion rate for the gas fee token if used non-native one.
    * @param stp The STP mode for the order.
    * @param signScheme
+   * @param trader
    * @returns The constructed order.
    */
   public buildOrder(
@@ -220,9 +227,8 @@ export class OrderConstructor {
     conversionRate?: [bigint, bigint],
     stp?: STPMode,
     signScheme?: SignScheme,
+    trader?: Address,
   ): Order {
-    console.log(ticker, this.routerFeeMap.get(ticker));
-    console.log(ticker, this.exchangeFeeMap.get(ticker), this.exchangeFeeMap);
     return {
       constraints: this.buildConstraints(
         minReceiveAmount,
@@ -262,7 +268,7 @@ export class OrderConstructor {
         to_ecosystem_book: ticker.isEcosystemBook,
         external_funds: externalFunds,
       },
-      maker: this.trader,
+      maker: trader ?? this.trader,
       price: price,
       qty: qty,
       salt: generateRandomSalt(),

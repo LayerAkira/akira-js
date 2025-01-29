@@ -92,7 +92,6 @@ export function intentBaseForQuoteAsset(
       totalReceiveToken += (remainingFillAmountEth * lvl.price) / baseAssetQty;
       approxTrades += Number(trades);
     }
-    console.log("approx trades", approxTrades);
 
     remainingFillAmountEth -= lvl.volume;
     if (remainingFillAmountEth <= 0) break;

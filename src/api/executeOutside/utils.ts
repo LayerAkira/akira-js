@@ -10,7 +10,7 @@ import {
 } from "starknet";
 import { ERC20Token, Order, OutsideCall, STPMode } from "../../request_types";
 import { Address } from "../../types";
-import { bigIntReplacer, castToApiSignature } from "../http/utils";
+import { castToApiSignature } from "../http/utils";
 
 /**
  * Builds the primitives required to build an "outside" transaction on StarkNet to submit order via snip9.
@@ -23,6 +23,8 @@ import { bigIntReplacer, castToApiSignature } from "../http/utils";
  * @param rollupPusher - The address responsible for pushing the transaction onto the rollup.
  * @param validSinceNowSeconds - (Optional) Number of seconds before the current time when the transaction becomes valid (default: 60).
  * @param validUntilNowSeconds - (Optional) Number of seconds after the current time when the transaction expires (default: 300).
+ * @param include_execute_approval - should "grant_access_to_executor" be incuded in client multicall
+ * @param core_address - must be specified if include_execute_approval
  * @returns A tuple containing:
  *   - `OutsideExecutionOptions`: Execution metadata (caller, valid times, etc.).
  *   - `Call[]`: An array of StarkNet `Call` objects for the transaction.
@@ -37,9 +39,21 @@ export function buildExecuteOutsidePrimitives(
   rollupPusher: Address,
   validSinceNowSeconds: number = 60,
   validUntilNowSeconds: number = 60 * 5,
+  include_execute_approval: boolean = false,
+  core_address: Address | undefined = undefined,
 ): [OutsideExecutionOptions, Call[], OutsideCall[]] {
   const clientExecuteOutsideCalls: Call[] = [];
-
+  if (include_execute_approval) {
+    if (core_address === undefined)
+      throw new Error(
+        "If include execute approval enabled need to specify core contract",
+      );
+    clientExecuteOutsideCalls.push({
+      contractAddress: core_address,
+      entrypoint: "grant_access_to_executor",
+      calldata: [],
+    });
+  }
   approvals.forEach((item) => {
     clientExecuteOutsideCalls.push({
       contractAddress: ercToAddress[item[0]],
@@ -133,7 +147,7 @@ export function buildExecuteOutsidePrimitives(
     execute_after: Math.floor(Date.now() / 1000) - validSinceNowSeconds,
     execute_before: Math.floor(Date.now() / 1000) + validUntilNowSeconds,
   };
-  const apiCalls = approvals.map((item) => {
+  let apiCalls: Array<OutsideCall> = approvals.map((item) => {
     return {
       to: ercToAddress[item[0]],
       selector: "approve",
@@ -143,6 +157,12 @@ export function buildExecuteOutsidePrimitives(
       },
     };
   });
+  if (include_execute_approval) {
+    apiCalls = [
+      { to: core_address!, selector: "grant_access_to_executor", kwargs: {} },
+      ...apiCalls,
+    ];
+  }
 
   return [callOptions, clientExecuteOutsideCalls, apiCalls];
 }

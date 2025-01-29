@@ -108,6 +108,18 @@ export interface ExecutionReport {
   status: OrderStatus; // The status of the order.
   matcher_result: MatchingEngineResult; // result that yields matching engine
 }
+
+/**
+ * Represent fill transaction info that is sent as soon rollup happened
+ */
+export interface FillTransactionInfo {
+  client: Address;
+  tx_hash: string;
+  order_hash: string;
+  source: string;
+  old_tx_hash: string;
+}
+
 /**
  * Represents result of cancel all by ticker indicating that exchange cancelled all user orders for particular ExchangeTicker
  */
