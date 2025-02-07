@@ -231,20 +231,25 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
 
   /**
    * Retrieves the order information with hash @order_hash  of trading account that associated with that class instance
+   * @param trader - order creator
    * @param order_hash - The quote ERC20 symbol.*
    * @param mode - either will return ReducedOrder with mode == 2 or full info with mode = 1
+   * @param isActive - make lookup for an active (passive market maker order) or inactive (filled/or taker order)
    * @returns A Promise that resolves with the result Order or ReducedOrder
    */
   public async getOrder(
+    trader: Address,
     order_hash: string,
     mode: number = 1,
+    isActive: boolean = false,
   ): Promise<Result<ExtendedOrder | ReducedOrder>> {
     return await this.get<Result<ExtendedOrder | ReducedOrder>>(
       "/user/order",
       {
         mode,
-        trading_account: this.tradingAccount,
+        trading_account: trader,
         order_hash,
+        active: isActive ? 1 : 0,
       },
       true,
       ["maker", "router_signer"],
@@ -468,6 +473,7 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
     };
     return await this.post("/place_order", requestBody, false);
   }
+
   /**
    * Sending request to exchange to sign external taker order by akira router
    * @returns A Promise that resolves with the router signature of provided order
@@ -568,7 +574,6 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
   public async getConversionRate(
     token: ERC20Token,
   ): Promise<Result<[bigint, bigint]>> {
-    console.log("HEY");
     return await this.get(
       "/info/conversion_rate",
       {
@@ -577,7 +582,6 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
       false,
       [],
       (e: any) => {
-        console.log("DAMn");
         if (e.length == 0) return e;
         e[0] = formattedDecimalToBigInt(
           e[0],

@@ -4,6 +4,7 @@ import {
   BBO,
   CancelAllReport,
   ExecutionReport,
+  FillTransactionInfo,
   Result,
   TableUpdate,
   Trade,
@@ -75,7 +76,11 @@ export interface ILayerAkiraWSSAPI {
    */
   subscribeOnExecReport(
     clientCb: (
-      evt: CancelAllReport | ExecutionReport | SocketEvent.DISCONNECT,
+      evt:
+        | FillTransactionInfo
+        | CancelAllReport
+        | ExecutionReport
+        | SocketEvent.DISCONNECT,
     ) => Promise<void>,
     timeout?: number,
   ): Promise<Result<string>>;
@@ -126,6 +131,8 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
    */
   public lastConnected: number = 0;
 
+  private REISSUE_LISTEN_KEY_TIME = 28 * 60 * 1000; // 30min, take less to avoid disconnection
+
   private readonly repeatCoolDownMillis: number;
   private client: W3CWebSocket | null = null;
   private httpClient: LayerAkiraHttpAPI;
@@ -147,6 +154,8 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
     "taker",
     "client",
     "hash",
+    "tx_hash",
+    "old_tx_hash",
   ];
 
   private readonly castByQuote = new Set([
@@ -161,6 +170,7 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
     "acc_base_qty",
     "fill_base_qty",
   ]);
+  private listenKeyRefreshInterval: NodeJS.Timeout | null = null;
 
   /**
    * Constructs a new LayerAkiraWSSAPI instance.
@@ -309,6 +319,10 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
 
   public close() {
     this.isClosed = true;
+    if (this.listenKeyRefreshInterval) {
+      clearInterval(this.listenKeyRefreshInterval);
+      this.listenKeyRefreshInterval = null;
+    }
     this.client?.close();
   }
 
@@ -480,6 +494,7 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
         );
         this.client = client;
         this.lastConnected = getEpochSeconds();
+        this.startListenKeyRefresh();
       };
 
       client.onmessage = (e) => {
@@ -494,6 +509,12 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
       client.onclose = (closeEvent) => {
         this.logger(`WebSocket closed: ${closeEvent}`);
         this.client = null;
+
+        if (this.listenKeyRefreshInterval) {
+          clearInterval(this.listenKeyRefreshInterval);
+          this.listenKeyRefreshInterval = null;
+        }
+
         resolve();
       };
     });
@@ -533,16 +554,18 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
   private async handleSocketMessage(e: IMessageEvent) {
     let json = JSON.parse(e.data.toString());
     if (json.id !== undefined) return this.jobs.get(json.id)?.event.emit(json);
-
-    let pair = json?.pair;
-    const bDecimals = this.httpClient.erc20ToDecimals[pair.base];
-    const qDecimals = this.httpClient.erc20ToDecimals[pair.quote];
-    json = convertFieldsRecursively(json, this.castByBase, (e: any) =>
-      formattedDecimalToBigInt(e, bDecimals),
-    );
-    json = convertFieldsRecursively(json, this.castByQuote, (e: any) =>
-      formattedDecimalToBigInt(e, qDecimals),
-    );
+    let [bDecimals, qDecimals] = [0, 0];
+    if (json?.pair !== undefined) {
+      const pair = json?.pair;
+      bDecimals = this.httpClient.erc20ToDecimals[pair.base];
+      qDecimals = this.httpClient.erc20ToDecimals[pair.quote];
+      json = convertFieldsRecursively(json, this.castByBase, (e: any) =>
+        formattedDecimalToBigInt(e, bDecimals),
+      );
+      json = convertFieldsRecursively(json, this.castByQuote, (e: any) =>
+        formattedDecimalToBigInt(e, qDecimals),
+      );
+    }
 
     let subscription: number;
     if (
@@ -568,7 +591,9 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
     } else if (json.stream == SocketEvent.EXECUTION_REPORT) {
       subscription = stringHash(normalize(json.client));
       json.result.client = json.client;
-      json.result.pair = json.pair;
+      if (json.pair !== undefined) {
+        json.result.pair = json.pair;
+      }
     } else {
       this.logger(
         `Unknown socket type of subscription message ${e.data.toString()}`,
@@ -582,5 +607,29 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
       return;
     }
     await this.subscriptions.get(subscription)!(json["result"]);
+  }
+
+  private startListenKeyRefresh() {
+    if (this.listenKeyRefreshInterval) {
+      clearInterval(this.listenKeyRefreshInterval);
+    }
+
+    this.listenKeyRefreshInterval = setInterval(
+      () => this.refreshListenKey(),
+      this.REISSUE_LISTEN_KEY_TIME,
+    );
+  }
+  private async refreshListenKey() {
+    this.logger(`Refreshing listen key...`);
+
+    const listenKeyResponse = await this.httpClient.getListenKey();
+
+    if (listenKeyResponse.result) {
+      this.logger(`Listen key refreshed successfully`);
+    } else {
+      this.logger(
+        `Failed to refresh listen key: ${JSON.stringify(listenKeyResponse)}`,
+      );
+    }
   }
 }
