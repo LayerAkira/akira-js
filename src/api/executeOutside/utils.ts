@@ -278,8 +278,8 @@ export function buildExecuteOutsideSORPrimitives(
       base_asset: cairo.uint256(order.qty.base_asset),
     },
     last_qty: {
-      base_qty: cairo.uint256(order.sor!.last_base_qty),
-      quote_qty: cairo.uint256(order.sor!.last_quote_qty),
+      base_qty: cairo.uint256(order.sor!.last_base_qty ?? 0n),
+      quote_qty: cairo.uint256(order.sor!.last_quote_qty ?? 0n),
       base_asset: cairo.uint256(
         order.sor!.path[order.sor!.path.length - 1].base_asset,
       ),
