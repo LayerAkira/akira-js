@@ -7,9 +7,11 @@ import {
   ERC20Token,
   ERCToDecimalsMap,
   ExtendedOrder,
+  GasFee,
   IncreaseNonce,
   Order,
   ReducedOrder,
+  SorContext,
   TraderSignature,
   Withdraw,
 } from "../../request_types";
@@ -349,26 +351,9 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
     const requestBody = {
       ...rest,
       token: token,
-      amount: bigIntToFormattedDecimal(req.amount, this.erc20ToDecimals[token]),
+      amount: this.prepareAmount(req.amount, token),
       sign,
-      gas_fee: {
-        ...gas_fee,
-        fee_token: gas_fee.fee_token,
-        max_gas_price: bigIntToFormattedDecimal(
-          req.gas_fee.max_gas_price,
-          this.erc20ToDecimals[this.baseFeeToken],
-        ),
-        conversion_rate: [
-          bigIntToFormattedDecimal(
-            req.gas_fee.conversion_rate[0],
-            this.erc20ToDecimals[this.baseFeeToken],
-          ),
-          bigIntToFormattedDecimal(
-            req.gas_fee.conversion_rate[1],
-            this.erc20ToDecimals[req.gas_fee.fee_token],
-          ),
-        ],
-      },
+      gas_fee: this.prepareGasFee(gas_fee),
     };
     return await this.post("/withdraw", requestBody, false);
   }
@@ -386,24 +371,7 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
     const requestBody = {
       ...req,
       sign,
-      gas_fee: {
-        ...req.gas_fee,
-        fee_token: req.gas_fee.fee_token,
-        max_gas_price: bigIntToFormattedDecimal(
-          req.gas_fee.max_gas_price,
-          this.erc20ToDecimals[this.baseFeeToken],
-        ),
-        conversion_rate: [
-          bigIntToFormattedDecimal(
-            req.gas_fee.conversion_rate[0],
-            this.erc20ToDecimals[this.baseFeeToken],
-          ),
-          bigIntToFormattedDecimal(
-            req.gas_fee.conversion_rate[1],
-            this.erc20ToDecimals[req.gas_fee.fee_token],
-          ),
-        ],
-      },
+      gas_fee: this.prepareGasFee(req.gas_fee),
     };
     return await this.post("/increase_nonce", requestBody, false);
   }
@@ -420,57 +388,35 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
     sign: TraderSignature,
     router_sign: [string, string] = ["0", "0"],
   ): Promise<Result<string>> {
-    const minReceive = order.constraints.min_receive_amount;
+    const min_receive = order.constraints.min_receive_amount;
+    const receive_token = order.flags.is_sell_side
+      ? order.ticker.quote
+      : order.ticker.base;
     const requestBody = {
       ...order,
       ticker: [order.ticker.base, order.ticker.quote],
       sign,
       router_sign,
-      price: bigIntToFormattedDecimal(
-        order.price,
-        this.erc20ToDecimals[order.ticker.quote],
-      ),
+      price: this.prepareAmount(order.price, order.ticker.quote),
       qty: {
-        base_qty: bigIntToFormattedDecimal(
-          order.qty.base_qty,
-          this.erc20ToDecimals[order.ticker.base],
-        ),
-        quote_qty: bigIntToFormattedDecimal(
-          order.qty.quote_qty,
-          this.erc20ToDecimals[order.ticker.quote],
-        ),
+        base_qty: this.prepareAmount(order.qty.base_qty, order.ticker.base),
+        quote_qty: this.prepareAmount(order.qty.quote_qty, order.ticker.quote),
       },
       fee: {
         ...order.fee,
-        gas_fee: {
-          ...order.fee.gas_fee,
-          fee_token: order.fee.gas_fee.fee_token,
-          max_gas_price: bigIntToFormattedDecimal(
-            order.fee.gas_fee.max_gas_price,
-            this.erc20ToDecimals[this.baseFeeToken],
-          ),
-          conversion_rate: [
-            bigIntToFormattedDecimal(
-              order.fee.gas_fee.conversion_rate[0],
-              this.erc20ToDecimals[this.baseFeeToken],
-            ),
-            bigIntToFormattedDecimal(
-              order.fee.gas_fee.conversion_rate[1],
-              this.erc20ToDecimals[order.fee.gas_fee.fee_token],
-            ),
-          ],
-        },
+        gas_fee: this.prepareGasFee(order.fee.gas_fee),
       },
       constraints: {
         ...order.constraints,
-        min_receive_amount: bigIntToFormattedDecimal(
-          minReceive,
-          this.erc20ToDecimals[
-            order.flags.is_sell_side ? order.ticker.quote : order.ticker.base
-          ],
-        ),
+        min_receive_amount: this.prepareAmount(min_receive, receive_token),
       },
     };
+    if (order.sor !== undefined) {
+      const spend_token = !order.flags.is_sell_side
+        ? order.ticker.quote
+        : order.ticker.base;
+      requestBody.sor = this.prepareSorCtx(spend_token, order.sor)! as any;
+    }
     return await this.post("/place_order", requestBody, false);
   }
 
@@ -487,48 +433,20 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
       ticker: [order.ticker.base, order.ticker.quote],
       sign: ["0", "0"],
       router_sign: ["0", "0"],
-      price: bigIntToFormattedDecimal(
-        order.price,
-        this.erc20ToDecimals[order.ticker.quote],
-      ),
+      price: this.prepareAmount(order.price, order.ticker.quote),
       qty: {
-        base_qty: bigIntToFormattedDecimal(
-          order.qty.base_qty,
-          this.erc20ToDecimals[order.ticker.base],
-        ),
-        quote_qty: bigIntToFormattedDecimal(
-          order.qty.quote_qty,
-          this.erc20ToDecimals[order.ticker.quote],
-        ),
+        base_qty: this.prepareAmount(order.qty.base_qty, order.ticker.base),
+        quote_qty: this.prepareAmount(order.qty.quote_qty, order.ticker.quote),
       },
       fee: {
         ...order.fee,
-        gas_fee: {
-          ...order.fee.gas_fee,
-          fee_token: order.fee.gas_fee.fee_token,
-          max_gas_price: bigIntToFormattedDecimal(
-            order.fee.gas_fee.max_gas_price,
-            this.erc20ToDecimals[this.baseFeeToken],
-          ),
-          conversion_rate: [
-            bigIntToFormattedDecimal(
-              order.fee.gas_fee.conversion_rate[0],
-              this.erc20ToDecimals[this.baseFeeToken],
-            ),
-            bigIntToFormattedDecimal(
-              order.fee.gas_fee.conversion_rate[1],
-              this.erc20ToDecimals[order.fee.gas_fee.fee_token],
-            ),
-          ],
-        },
+        gas_fee: this.prepareGasFee(order.fee.gas_fee),
       },
       constraints: {
         ...order.constraints,
-        min_receive_amount: bigIntToFormattedDecimal(
+        min_receive_amount: this.prepareAmount(
           minReceive,
-          this.erc20ToDecimals[
-            order.flags.is_sell_side ? order.ticker.quote : order.ticker.base
-          ],
+          order.flags.is_sell_side ? order.ticker.quote : order.ticker.base,
         ),
       },
     };
@@ -690,5 +608,56 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
     if (o?.state?.paid_fee_as_taker)
       o!.state!.paid_fee_as_taker = BigInt(o?.state?.paid_fee_as_taker);
     return o;
+  }
+
+  private prepareGasFee(gas_fee: GasFee) {
+    return {
+      ...gas_fee,
+      fee_token: gas_fee.fee_token,
+      max_gas_price: this.prepareAmount(
+        gas_fee.max_gas_price,
+        this.baseFeeToken,
+      ),
+      conversion_rate: [
+        this.prepareAmount(gas_fee.conversion_rate[0], this.baseFeeToken),
+        this.prepareAmount(gas_fee.conversion_rate[1], gas_fee.fee_token),
+      ],
+    };
+  }
+
+  private prepareAmount(amount: bigint, token: ERC20Token) {
+    return bigIntToFormattedDecimal(amount, this.erc20ToDecimals[token]);
+  }
+
+  private prepareSorCtx(start_spend_token: ERC20Token, sor?: SorContext) {
+    if (!sor) return {};
+    const last = sor.path[sor.path.length - 1];
+    const receive_token = last.is_sell_side
+      ? last.ticker.quote
+      : last.ticker.base;
+    return {
+      path: sor.path.map((s) => {
+        return {
+          ...s,
+          price: this.prepareAmount(s.price, s.ticker.quote),
+          ticker: [s.ticker.base, s.ticker.quote],
+        };
+      }),
+      order_fee: {
+        ...sor.order_fee,
+        gas_fee: this.prepareGasFee(sor.order_fee.gas_fee),
+      },
+      allow_non_atomic: sor.allow_non_atomic,
+      min_receive_amount: this.prepareAmount(
+        sor.min_receive_amount ?? 0n,
+        start_spend_token,
+      ),
+      max_spend_amount: this.prepareAmount(
+        sor.max_spend_amount ?? 0n,
+        receive_token,
+      ),
+      last_base_qty: this.prepareAmount(sor.last_base_qty, last.ticker.base),
+      last_quote_qty: this.prepareAmount(sor.last_quote_qty, last.ticker.quote),
+    };
   }
 }

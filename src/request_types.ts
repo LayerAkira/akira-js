@@ -166,6 +166,23 @@ interface ExecuteOutsideCall {
   version: string; // Version of snip12, v1, v2
 }
 
+export interface MinimalTakerOrderInfo {
+  price: bigint;
+  ticker: TradedPair;
+  is_sell_side: boolean;
+  base_asset: bigint;
+}
+
+export interface SorContext {
+  path: MinimalTakerOrderInfo[];
+  order_fee: OrderFee;
+  allow_non_atomic: boolean;
+  min_receive_amount?: bigint;
+  max_spend_amount?: bigint;
+  last_base_qty: bigint;
+  last_quote_qty: bigint;
+}
+
 /**
  * Represents a user order on the LayerAkira exchange
  */
@@ -181,6 +198,7 @@ export interface Order {
   source: string; // from where order
   sign_scheme: SignScheme;
   snip9_call?: ExecuteOutsideCall;
+  sor?: SorContext;
 }
 
 /**
