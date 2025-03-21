@@ -16,7 +16,7 @@ import {
   STPMode,
 } from "../../request_types";
 import { Address } from "../../types";
-import { castToApiSignature } from "../http/utils";
+import { bigIntReplacer, castToApiSignature } from "../http/utils";
 
 function prepareFees(
   order_fee: OrderFee,
@@ -287,7 +287,7 @@ export function buildExecuteOutsideSORPrimitives(
     ...prepareFees(order.sor!.order_fee, ercToAddress),
     created_at: order.constraints.created_at,
     source: order.source,
-    allow_non_atomic: order.sor?.allow_non_atomic,
+    allow_nonatomic: order.sor?.allow_non_atomic,
     to_ecosystem_book: order.flags.to_ecosystem_book,
     duration_valid: order.constraints.duration_valid,
     nonce: order.constraints.nonce,
