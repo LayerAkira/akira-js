@@ -450,6 +450,12 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
         ),
       },
     };
+    if (order.sor !== undefined) {
+      const spend_token = !order.flags.is_sell_side
+        ? order.ticker.quote
+        : order.ticker.base;
+      requestBody.sor = this.prepareSorCtx(spend_token, order.sor)! as any;
+    }
     return await this.post("/router/sign_external_order", requestBody, false);
   }
 
@@ -638,7 +644,7 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
     return {
       path: sor.path.map((s) => {
         return {
-          ...s,
+          is_sell_side: s.is_sell_side,
           price: this.prepareAmount(s.price, s.ticker.quote),
           ticker: [s.ticker.base, s.ticker.quote],
         };
@@ -650,11 +656,11 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
       allow_non_atomic: sor.allow_non_atomic,
       min_receive_amount: this.prepareAmount(
         sor.min_receive_amount ?? 0n,
-        start_spend_token,
+        receive_token,
       ),
       max_spend_amount: this.prepareAmount(
         sor.max_spend_amount ?? 0n,
-        receive_token,
+        start_spend_token,
       ),
       last_base_qty: this.prepareAmount(sor.last_base_qty, last.ticker.base),
       last_quote_qty: this.prepareAmount(sor.last_quote_qty, last.ticker.quote),
