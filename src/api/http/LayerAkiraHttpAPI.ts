@@ -265,7 +265,15 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
    * @param limit - how many orders to retrieve in request, max is set to 20
    * @param offset -- offset from beginning
    * @param active -- active parameter indicates whether to return only active or inactive orders.
-   * @param cursor -- cursor
+   * @param is_taker -- should order be queried from db (active == False) for taker only or maker only or both if not specified
+   * @param to_ecosystem_book which books ecosystem or not defaults to router book
+   * @param cursor -- cursor, returns from previous queries; if client wants to build inplace then do as follows:
+   *              ```json
+   *                    const cursor = encodeURIComponent(JSON.stringify{
+   *                       order_id: "database order id that is retrieved from order data (not the order hash)",
+   *                       created_at: 1630567890
+   *                    });
+   *              ```
    * @returns A Promise that resolves with the result {}data: Order[] or ReducedOrder[], cursor}
    */
   public async getOrders(
@@ -273,23 +281,35 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
     limit = 20,
     offset = 0,
     active = false,
-    cursor?: string,
+    is_taker: null | boolean = null,
+    cursor: string | undefined | null = null,
+    to_ecosystem_book = false,
   ): Promise<
     Result<{ data: ExtendedOrder[] | ReducedOrder[]; cursor: string | null }>
   > {
+    let query = {
+      mode,
+      trading_account: this.tradingAccount,
+      limit,
+      offset,
+      active,
+      to_ecosystem_book,
+    } as any;
+    if (is_taker !== null && is_taker !== undefined)
+      query = { ...query, is_taker };
+    if (cursor !== null && cursor !== undefined) query = { ...query, cursor };
+
     return await this.get(
       "/user/orders",
-      {
-        mode,
-        trading_account: this.tradingAccount,
-        limit,
-        offset,
-        active,
-        cursor,
-      },
+      query,
       true,
-      ["maker", "router_signer"],
-      (o: any) => o.map((e: any) => this.parseOrder(e)),
+      ["maker", "router_signer", "cursor"],
+      (o: any) => {
+        return {
+          data: o["data"].map((e: any) => this.parseOrder(e)),
+          cursor: o.cursor,
+        };
+      },
     );
   }
 
