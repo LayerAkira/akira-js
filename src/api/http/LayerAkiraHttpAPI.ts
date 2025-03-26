@@ -351,6 +351,7 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
           quote: req.ticker!.pair.quote,
           to_ecosystem_book: req.ticker!.isEcosystemBook,
         },
+        sign_scheme: req.sign_scheme,
       },
       false,
     );
@@ -512,7 +513,7 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
 
   /**
    * Fetches suggested conversion rate between tokens in case user need rate for order building
-   *  @param token in what token we want to pay settlement
+   *  @param token in what token we want to pay setlement
    * @returns A promise that resolves to a Result object containing the conversion rate
    */
   public async getConversionRate(

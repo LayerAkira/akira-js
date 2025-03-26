@@ -143,6 +143,7 @@ const cancelType = {
     { name: "maker", type: "felt" },
     { name: "order_hash", type: "felt" },
     { name: "salt", type: "felt" },
+    { name: "sign_scheme", type: "felt" },
   ],
 };
 
@@ -152,6 +153,7 @@ const cancelAllType = {
     { name: "maker", type: "felt" },
     { name: "salt", type: "felt" },
     { name: "ticker", type: "Ticker" },
+    { name: "sign_scheme", type: "felt" },
   ],
   Ticker: [
     { name: "base", type: "felt" },
@@ -336,6 +338,7 @@ export function getCancelOrderSignData(
                 : cancel.ticker!.pair.quote,
               to_ecosystem_book: cancel.ticker?.isEcosystemBook,
             },
+            sign_scheme: cancel.sign_scheme,
           },
   };
 }

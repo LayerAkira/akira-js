@@ -234,6 +234,7 @@ export interface CancelRequest {
   order_hash: string | null;
   salt: bigint;
   ticker?: ExchangeTicker;
+  sign_scheme: SignScheme;
 }
 
 /**
