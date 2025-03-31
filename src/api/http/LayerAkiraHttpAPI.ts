@@ -254,7 +254,7 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
         active: isActive ? 1 : 0,
       },
       true,
-      ["maker", "router_signer"],
+      ["maker", "router_signer", "hash"],
       (o: any) => this.parseOrder(o),
     );
   }
@@ -303,7 +303,7 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
       "/user/orders",
       query,
       true,
-      ["maker", "router_signer", "cursor"],
+      ["maker", "router_signer", "cursor", "hash"],
       (o: any) => {
         return {
           data: o["data"].map((e: any) => this.parseOrder(e)),
@@ -607,7 +607,6 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
         "filled_quote_amount",
         "quote_qty",
         "failed_quote_amount",
-        "",
       ]),
       (e) =>
         e !== undefined && e !== null
@@ -619,7 +618,7 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
       new Set(["filled_base_amount", "base_qty", "failed_base_amount"]),
       (e) =>
         e !== undefined && e !== null
-          ? formattedDecimalToBigInt(e, this.erc20ToDecimals[o.ticker.quote])
+          ? formattedDecimalToBigInt(e, this.erc20ToDecimals[o.ticker.base])
           : e,
     );
     if (o.fee)

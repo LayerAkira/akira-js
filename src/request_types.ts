@@ -206,6 +206,7 @@ export interface Order {
  */
 export interface ExtendedOrder extends Order {
   state: OrderStateInfo;
+  hash: string;
 }
 
 /**
