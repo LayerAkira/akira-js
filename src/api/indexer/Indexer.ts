@@ -103,6 +103,7 @@ export class IndexerAPI extends BaseHttpAPI {
    * @param pair - optional to skew on particular traded pair
    * @param cursor - Cursor to paginate. use hash of the last processed order
    * @param num - Number of orders to fetch.
+   * @param skip_dependant_orders - should synthetic part of lead order be skipped
    * @returns A Promise that resolves with a list of trader orders. from latest to oldest
    */
   public async getTraderOrders(
@@ -114,12 +115,15 @@ export class IndexerAPI extends BaseHttpAPI {
     } | null = null,
     cursor: string | null = null,
     num: string = "20",
-  ): Promise<Result<DbOrder[]>> {
-    return await this.get<Result<DbOrder[]>>(
+    skip_dependant_orders: boolean = true,
+  ): Promise<Result<{ data: DbOrder[]; cursor: string | null }>> {
+    return await this.get<Result<{ data: DbOrder[]; cursor: string | null }>>(
       pair === null
         ? `/orders/${trader}`
         : `/orders/${trader}/${pair.base}/${pair.quote}/${pair.is_ecosystem_book}`,
-      cursor !== null ? { cursor, num } : { num },
+      cursor !== null
+        ? { cursor, num, skip_dependant_orders }
+        : { num, skip_dependant_orders },
       false,
       [],
       (o: any) => o,
