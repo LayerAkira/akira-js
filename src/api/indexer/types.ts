@@ -41,6 +41,20 @@ export interface DbRollup {
   trades_count: number;
   takers_count: number;
   makers_count: number;
+  rollup_index: number;
+}
+
+export interface SorClosure {
+  dependent_orders: string[]; // sor orders in path excluding lead order
+  received: string; //received in last order
+  received_asset: ERC20Token; //  # received last asset
+  paid_gas: string; // paid  in sor excluding
+  paid_as_taker_router: string; // paid  in sor excluding lead
+  paid_as_taker_exchange: string; //  # paid  in sor excluding lead
+  trades_as_taker: number; //   in sor excluding lead
+  failed_trades_as_taker: number; // in sor excluding lead
+  gas_token: ERC20Token; // in sor excluding lead
+  fixed_fee_token: ERC20Token; // in sor excluding lead
 }
 
 export interface DbOrder {
@@ -78,6 +92,9 @@ export interface DbOrder {
   quote_asset: string;
   failed_trades_as_taker: number;
   failed_trades_as_maker: number;
+  lead_order: string;
+  previous_order: string;
+  sor: SorClosure;
 }
 
 export interface TraderVolume {

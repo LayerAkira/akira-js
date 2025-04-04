@@ -1,4 +1,8 @@
-import { ERC20Token, OrderStatus, TradedPair } from "./request_types";
+import {
+  ERC20Token,
+  OrderStatus,
+  TradedPair,
+} from "./request_types";
 import { Address } from "./types";
 import { ExchangeTicker } from "./api";
 
@@ -91,6 +95,13 @@ export enum MatchingEngineResult {
   NOT_ENOUGH_LIQUIDITY = "NOT_ENOUGH_LIQUIDITY",
   GAS_COST = "GAS_COST", // gas higher than settled trades post fees
   FAILED_VALIDATION = "FAILED_VALIDATION", // deep validation of order was unsuccessful
+  MAX_SPENT_FAILED = "MAX_SPENT_FAILED",
+}
+
+export interface SorReport {
+  leftovers: { ERC20Token: string }; // note not normalized
+  receive_token: ERC20Token;
+  fill_receive_qty: bigint;
 }
 /**
  * Represents an execution report for an order.
@@ -107,6 +118,7 @@ export interface ExecutionReport {
   is_sell_side: boolean; // Indicates whether the order was on the sell side.
   status: OrderStatus; // The status of the order.
   matcher_result: MatchingEngineResult; // result that yields matching engine
+  sor?: SorReport;
 }
 
 /**

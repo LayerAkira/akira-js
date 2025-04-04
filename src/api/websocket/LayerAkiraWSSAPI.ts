@@ -565,6 +565,12 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
       json = convertFieldsRecursively(json, this.castByQuote, (e: any) =>
         formattedDecimalToBigInt(e, qDecimals),
       );
+      if (json.result.sor) {
+        json.result.sor.fill_receive_qty = formattedDecimalToBigInt(
+          json.result.sor.fill_receive_qty,
+          this.httpClient.erc20ToDecimals[json.result.sor.receive_token],
+        );
+      }
     }
 
     let subscription: number;

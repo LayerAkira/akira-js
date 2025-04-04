@@ -325,10 +325,10 @@ export function getCancelOrderSignData(
     domain: domain,
     message:
       cancel.order_hash !== null
-        ? {...cancel, salt:'0x' + cancel.salt.toString(16)}
+        ? { ...cancel, salt: "0x" + cancel.salt.toString(16) }
         : {
             maker: cancel.maker,
-            salt: '0x' + cancel.salt.toString(16),
+            salt: "0x" + cancel.salt.toString(16),
             ticker: {
               base: tokenMapping
                 ? tokenMapping[cancel.ticker!.pair.base]
