@@ -16,7 +16,7 @@ import {
   STPMode,
 } from "../../request_types";
 import { Address } from "../../types";
-import { bigIntReplacer, castToApiSignature } from "../http/utils";
+import { castToApiSignature } from "../http/utils";
 
 function prepareFees(
   order_fee: OrderFee,
@@ -27,14 +27,18 @@ function prepareFees(
       recipient: order_fee.trade_fee.recipient,
       maker_pbips: order_fee.trade_fee.maker_pbips,
       taker_pbips: order_fee.trade_fee.taker_pbips,
-      apply_to_receipt_amount: order_fee.trade_fee.apply_to_receipt_amount,
     },
     router_fee: {
       recipient: order_fee.router_fee.recipient,
       maker_pbips: order_fee.router_fee.maker_pbips,
       taker_pbips: order_fee.router_fee.taker_pbips,
-      apply_to_receipt_amount: order_fee.router_fee.apply_to_receipt_amount,
     },
+    integrator_fee: {
+      recipient: order_fee.integrator_fee.recipient,
+      maker_pbips: order_fee.integrator_fee.maker_pbips,
+      taker_pbips: order_fee.integrator_fee.taker_pbips,
+    },
+    apply_to_receipt_amount: order_fee.apply_to_receipt_amount,
     gas_fee: {
       gas_per_action: order_fee.gas_fee.gas_per_action,
       fee_token: ercToAddress[order_fee.gas_fee.fee_token],
@@ -51,14 +55,12 @@ function prepareFees(
  * Builds the primitives required to build an "outside" transaction on StarkNet to submit order via snip9.
  *
  * @param placeOnchainCall place onchain call
- * @param exchange - The StarkNet exchange contract instance.
  * @param ercToAddress - A mapping of ERC20 tokens to their corresponding StarkNet addresses.
  * @param approvals - Array of tuples specifying ERC20 tokens and the amounts to approve.
  * @param rollupPusher - The address responsible for pushing the transaction onto the rollup.
  * @param validSinceNowSeconds - (Optional) Number of seconds before the current time when the transaction becomes valid (default: 60).
  * @param validUntilNowSeconds - (Optional) Number of seconds after the current time when the transaction expires (default: 300).
  * @param include_execute_approval - should "grant_access_to_executor" be incuded in client multicall
- * @param core_address - must be specified if include_execute_approval
  * @returns A tuple containing:
  *   - `OutsideExecutionOptions`: Execution metadata (caller, valid times, etc.).
  *   - `Call[]`: An array of StarkNet `Call` objects for the transaction.
@@ -66,25 +68,21 @@ function prepareFees(
  */
 export function buildBaseExecuteOutsidePrimitives(
   placeOnchainCall: Call,
-  exchange: Contract,
   ercToAddress: { [x: ERC20Token]: Address },
-  approvals: [[ERC20Token, bigint]],
+  approvals: [[ERC20Token, bigint, Address]],
   rollupPusher: Address,
   validSinceNowSeconds: number = 60,
   validUntilNowSeconds: number = 60 * 5,
-  include_execute_approval: boolean = false,
-  core_address: Address | undefined = undefined,
+  include_execute_approval: [Address, Address][] = [],
 ): [OutsideExecutionOptions, Call[], OutsideCall[]] {
   const clientExecuteOutsideCalls: Call[] = [];
   if (include_execute_approval) {
-    if (core_address === undefined)
-      throw new Error(
-        "If include execute approval enabled need to specify core contract",
-      );
-    clientExecuteOutsideCalls.push({
-      contractAddress: core_address,
-      entrypoint: "grant_access_to_executor",
-      calldata: [],
+    include_execute_approval.forEach((e) => {
+      clientExecuteOutsideCalls.push({
+        contractAddress: e[0],
+        entrypoint: "grant_access_to_executor",
+        calldata: [e[1]],
+      });
     });
   }
   approvals.forEach((item) => {
@@ -92,7 +90,7 @@ export function buildBaseExecuteOutsidePrimitives(
       contractAddress: ercToAddress[item[0]],
       entrypoint: "approve",
       calldata: {
-        recipient: exchange.address,
+        recipient: item[2],
         amount: cairo.uint256(item[1]),
       },
     });
@@ -110,14 +108,20 @@ export function buildBaseExecuteOutsidePrimitives(
       to: ercToAddress[item[0]],
       selector: "approve",
       kwargs: {
-        recipient: exchange.address.toString(),
+        recipient: item[2].toString(),
         amount: item[1].toString(),
       },
     };
   });
   if (include_execute_approval) {
     apiCalls = [
-      { to: core_address!, selector: "grant_access_to_executor", kwargs: {} },
+      ...include_execute_approval.map((e) => {
+        return {
+          to: e[0],
+          selector: "grant_access_to_executor",
+          kwargs: { executor: e[1] },
+        };
+      }),
       ...apiCalls,
     ];
   }
@@ -137,7 +141,6 @@ export function buildBaseExecuteOutsidePrimitives(
  * @param validSinceNowSeconds - (Optional) Number of seconds before the current time when the transaction becomes valid (default: 60).
  * @param validUntilNowSeconds - (Optional) Number of seconds after the current time when the transaction expires (default: 300).
  * @param include_execute_approval - should "grant_access_to_executor" be incuded in client multicall
- * @param core_address - must be specified if include_execute_approval
  * @returns A tuple containing:
  *   - `OutsideExecutionOptions`: Execution metadata (caller, valid times, etc.).
  *   - `Call[]`: An array of StarkNet `Call` objects for the transaction.
@@ -148,12 +151,11 @@ export function buildExecuteOutsidePrimitives(
   order: Order,
   ercToAddress: { [x: ERC20Token]: Address },
   routerSignature: [string, string],
-  approvals: [[ERC20Token, bigint]],
+  approvals: [[ERC20Token, bigint, Address]],
   rollupPusher: Address,
   validSinceNowSeconds: number = 60,
   validUntilNowSeconds: number = 60 * 5,
-  include_execute_approval: boolean = false,
-  core_address: Address | undefined = undefined,
+  include_execute_approval: [Address, Address][] = [],
 ): [OutsideExecutionOptions, Call[], OutsideCall[]] {
   const orderCalldata = {
     maker: order.maker,
@@ -210,14 +212,12 @@ export function buildExecuteOutsidePrimitives(
 
   return buildBaseExecuteOutsidePrimitives(
     placeOnchainCall,
-    exchange,
     ercToAddress,
     approvals,
     rollupPusher,
     validSinceNowSeconds,
     validUntilNowSeconds,
     include_execute_approval,
-    core_address,
   );
 }
 
@@ -244,12 +244,11 @@ export function buildExecuteOutsideSORPrimitives(
   order: Order,
   ercToAddress: { [x: ERC20Token]: Address },
   routerSignature: [string, string],
-  approvals: [[ERC20Token, bigint]],
+  approvals: [[ERC20Token, bigint, Address]],
   rollupPusher: Address,
   validSinceNowSeconds: number = 60,
   validUntilNowSeconds: number = 60 * 5,
-  include_execute_approval: boolean = false,
-  core_address: Address | undefined = undefined,
+  include_execute_approval: [Address, Address][] = [],
 ): [OutsideExecutionOptions, Call[], OutsideCall[]] {
   const orchestrate_order = {
     price: cairo.uint256(order.price),
@@ -313,14 +312,12 @@ export function buildExecuteOutsideSORPrimitives(
 
   return buildBaseExecuteOutsidePrimitives(
     placeOnchainCall,
-    exchange,
     ercToAddress,
     approvals,
     rollupPusher,
     validSinceNowSeconds,
     validUntilNowSeconds,
     include_execute_approval,
-    core_address,
   );
 }
 

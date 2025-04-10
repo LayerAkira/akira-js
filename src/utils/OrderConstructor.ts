@@ -407,20 +407,27 @@ export class OrderConstructor {
     exchange_pbips_maker?: number,
     router_pbips_taker?: number,
     router_pbips_maker?: number,
+    integrator_pbips_taker?: number,
+    integrator_pbips_maker?: number,
+    integrator_address?: Address,
   ) {
     return {
       trade_fee: {
         recipient: this.exchangeFeeRecipient,
         maker_pbips: exchange_pbips_maker ?? this.exchangeFeeMap.get(ticker)[0],
         taker_pbips: exchange_pbips_taker ?? this.exchangeFeeMap.get(ticker)[1],
-        apply_to_receipt_amount: apply_to_receipt_amount,
       },
       router_fee: {
         recipient: this.routerFeeRecipient,
         maker_pbips: router_pbips_maker ?? this.routerFeeMap.get(ticker)[0],
         taker_pbips: router_pbips_taker ?? this.routerFeeMap.get(ticker)[1],
-        apply_to_receipt_amount: apply_to_receipt_amount,
       },
+      integrator_fee: {
+        recipient: integrator_address ?? this.routerFeeRecipient,
+        maker_pbips: integrator_pbips_maker ?? 0,
+        taker_pbips: integrator_pbips_taker ?? 0,
+      },
+      apply_to_receipt_amount: apply_to_receipt_amount,
       gas_fee: {
         gas_per_action: ticker.isEcosystemBook
           ? this.ecosystemGasSteps

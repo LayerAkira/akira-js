@@ -1,8 +1,4 @@
-import {
-  ERC20Token,
-  OrderStatus,
-  TradedPair,
-} from "./request_types";
+import { ERC20Token, OrderStatus, TradedPair } from "./request_types";
 import { Address } from "./types";
 import { ExchangeTicker } from "./api";
 

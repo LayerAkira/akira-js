@@ -68,7 +68,6 @@ const fixedFeeType = {
     { name: "recipient", type: "felt" },
     { name: "maker_pbips", type: "felt" },
     { name: "taker_pbips", type: "felt" },
-    { name: "apply_to_receipt_amount", type: "bool" },
   ],
 };
 
@@ -76,6 +75,8 @@ const orderFeeType = {
   OrderFee: [
     { name: "trade_fee", type: "FixedFee" },
     { name: "router_fee", type: "FixedFee" },
+    { name: "integrator_fee", type: "FixedFee" },
+    { name: "apply_to_receipt_amount", type: "bool" },
     { name: "gas_fee", type: "GasFee" },
   ],
 };
