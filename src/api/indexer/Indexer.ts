@@ -207,10 +207,7 @@ export class IndexerAPI extends BaseHttpAPI {
       { cursor, num, reverse },
       false,
       [],
-      (o: any) => {
-        o.forEach((e: any) => (e.amount = BigInt(e.amount)));
-        return o;
-      },
+      (o: any) => o,
     );
   }
 
@@ -236,10 +233,7 @@ export class IndexerAPI extends BaseHttpAPI {
       { cursor, num, reverse },
       false,
       [],
-      (o: any) => {
-        o.forEach((e: any) => (e.amount = BigInt(e.amount)));
-        return o;
-      },
+      (o: any) => o,
     );
   }
 }
