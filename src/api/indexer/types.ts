@@ -109,7 +109,7 @@ export interface DbDeposit {
   receiver: Address;
   token_address: Address;
   funder: Address;
-  amount: bigint;
+  amount: string;
   event_idx: number;
   tx_index: number | null;
   event_block: number | null;
@@ -124,7 +124,7 @@ export interface DbWithdrawal {
   token_address: Address;
   receiver: Address;
   salt: string;
-  amount: bigint;
+  amount: string;
   spent_gas: string;
   gas_token: ERC20Token;
   direct: boolean;
