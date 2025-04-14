@@ -1,5 +1,6 @@
 import { BigNumberish, hexlify } from "ethers";
 import { ExchangeTicker, SocketEvent } from "./types";
+import { TradedPair } from "src/request_types";
 
 export function sleep(ms: number): Promise<void> {
   return new Promise<void>((resolve) => {
@@ -31,4 +32,12 @@ export function getHashCode(obj: ExchangeTicker, event: SocketEvent): number {
   const pairHash = stringHash(obj.pair.base) ^ stringHash(obj.pair.quote);
   const isEcosystemBookHash = obj.isEcosystemBook ? 1 : 0;
   return pairHash ^ isEcosystemBookHash ^ stringHash(event);
+}
+
+export function timeout(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function getPairKey(pair: TradedPair): string {
+  return `${pair.base}/${pair.quote}`;
 }
