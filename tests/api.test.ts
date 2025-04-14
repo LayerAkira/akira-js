@@ -23,7 +23,7 @@ const signer = new Signer(testAcc.privateKey);
 let api: SDK.LayerAkiraHttpAPI; // Declare a variable to store the API instance
 api = new SDK.LayerAkiraHttpAPI(
   { apiBaseUrl: TESTING_BASE_NET },
-  { ETH: 18, AETH: 18, AUSDC: 6, AUSDT: 6, STRK: 18 },
+  { ETH: 18, AETH: 18, AUSDC: 6, AUSDT: 6, STRK: 18, USDC: 6, USDT: 6 },
   "STRK",
   (arg) => console.log(arg),
 );
@@ -353,7 +353,7 @@ describe("websockets", () => {
     }
 
     const ticker = {
-      pair: { base: "ETH", quote: "STRK" },
+      pair: { base: "ETH", quote: "USDC" },
       isEcosystemBook: false,
     };
     let result = await wsClient.subscribeOnMarketData(
@@ -405,5 +405,38 @@ describe("websockets", () => {
     await timeout(5 * 1000);
     wsClient.close();
     await timeout(2 * 1000);
+  });
+
+  it("run and test the changes in depthbook", async () => {
+    const wsClient = new SDK.LayerAkiraWSSAPI(
+      TESTING_WS,
+      api,
+      true,
+      (arg) => {
+        console.log(arg);
+      },
+      1000,
+    );
+    wsClient.connect();
+    await timeout(1000);
+
+    const ticker = {
+      pair: { base: "ETH", quote: "USDC" },
+      isEcosystemBook: false,
+    };
+
+    const depthBook = new SDK.DepthBook(api, wsClient, [ticker], (arg) => {
+      console.log(arg);
+    });
+
+    await depthBook.run();
+    let interval = setInterval(() => {
+      console.log("table: ", depthBook.getBook(ticker.pair));
+    }, 1000);
+
+    await timeout(10 * 1000);
+    clearInterval(interval);
+    wsClient.close();
+    await timeout(3 * 1000);
   });
 });
