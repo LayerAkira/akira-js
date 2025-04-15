@@ -406,7 +406,9 @@ describe("websockets", () => {
     wsClient.close();
     await timeout(2 * 1000);
   });
+});
 
+describe("depthbook test", () => {
   it("run and test the changes in depthbook", async () => {
     const wsClient = new SDK.LayerAkiraWSSAPI(
       TESTING_WS,
@@ -438,5 +440,128 @@ describe("websockets", () => {
     clearInterval(interval);
     wsClient.close();
     await timeout(3 * 1000);
+  });
+
+  it("should handle depth updates correctly", async () => {
+    // Mock HTTP API for initial snapshot
+    const mockHttpApi = {
+      getSnapshot: jest.fn().mockResolvedValue({
+        result: {
+          levels: {
+            bids: [
+              [100000000n, 5000000000n, 1],
+              [99000000n, 7000000000n, 2],
+            ],
+            asks: [
+              [101000000n, 3000000000n, 1],
+              [102000000n, 4000000000n, 2],
+            ],
+            msg_id: 100n,
+          },
+        },
+      }),
+      erc20ToDecimals: {
+        ETH: 18,
+        USDC: 6,
+      },
+    } as unknown as SDK.LayerAkiraHttpAPI;
+
+    // Mock WebSocket API
+    const mockWsApi = {
+      subscribeOnDepthUpdate: jest
+        .fn()
+        .mockImplementation((ticker, callback) => {
+          setTimeout(() => {
+            callback({
+              pair: ticker.pair,
+              msg_ids_start: 101n,
+              msg_ids_end: 101n,
+              msg_id: 101n,
+              bids: [
+                [98000000n, 10000000000n, 1], // New bid level
+              ],
+              asks: [
+                [101000000n, 2000000000n, 1], // Modify quantity on existing ask
+              ],
+            });
+          }, 100);
+
+          setTimeout(() => {
+            // Update 2: Remove a bid level, add new ask level
+            callback({
+              pair: ticker.pair,
+              msg_ids_start: 102n,
+              msg_ids_end: 102n,
+              msg_id: 102n,
+              bids: [
+                [99000000n, 0n, 0], // Remove bid level by setting quantity to zero
+              ],
+              asks: [
+                [103000000n, 1000000000n, 1], // Add new ask level
+              ],
+            });
+          }, 200);
+
+          setTimeout(() => {
+            // Update 3: Modify existing bid level
+            callback({
+              pair: ticker.pair,
+              msg_ids_start: 103n,
+              msg_ids_end: 103n,
+              msg_id: 103n,
+              bids: [
+                [100000000n, 6000000000n, 2], // Update quantity on existing bid
+              ],
+              asks: [],
+            });
+          }, 300);
+
+          return Promise.resolve(true);
+        }),
+      connect: jest.fn().mockResolvedValue(undefined),
+    } as unknown as SDK.LayerAkiraWSSAPI;
+
+    const ticker = {
+      pair: { base: "ETH", quote: "USDC" },
+      isEcosystemBook: false,
+    };
+
+    // Create depth book with mock APIs
+    const depthBook = new SDK.DepthBook(
+      mockHttpApi as any,
+      mockWsApi as any,
+      [ticker],
+      (log) => console.log(log),
+    );
+
+    await depthBook.run();
+
+    await timeout(500);
+
+    const finalBook = depthBook.getBook(ticker.pair);
+
+    expect(finalBook).toBeDefined();
+    expect(finalBook?.bids).toHaveLength(2); // Original 100, added 98, removed 99
+    expect(finalBook?.asks).toHaveLength(3); // Original 101, 102, and added 103
+
+    const bids = finalBook?.bids || [];
+    const asks = finalBook?.asks || [];
+
+    // Bids should be sorted descending by price
+    expect(bids[0][0]).toBe(100000000n); // Price
+    expect(bids[0][1]).toBe(6000000000n); // Updated quantity
+    expect(bids[1][0]).toBe(98000000n); // Price
+    expect(bids[1][1]).toBe(10000000000n); // Quantity
+
+    // Asks should be sorted ascending by price
+    expect(asks[0][0]).toBe(101000000n); // Price
+    expect(asks[0][1]).toBe(2000000000n); // Updated quantity
+    expect(asks[1][0]).toBe(102000000n); // Price
+    expect(asks[1][1]).toBe(4000000000n); // Quantity
+    expect(asks[2][0]).toBe(103000000n); // Price
+    expect(asks[2][1]).toBe(1000000000n); // Quantity
+
+    // Check msg_id was updated
+    expect(finalBook?.msg_id).toBe(103n);
   });
 });
