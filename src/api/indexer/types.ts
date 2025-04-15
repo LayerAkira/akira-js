@@ -21,6 +21,7 @@ export interface DbTrade {
   event_idx: number;
   usd_volume: string;
   exchange_address: string;
+  is_sell: boolean;
 }
 
 export interface DbRollup {
@@ -113,6 +114,7 @@ export interface DbDeposit {
   event_idx: number;
   tx_index: number | null;
   event_block: number | null;
+  event_time: number | null; // in seconds
 }
 
 /**
@@ -132,4 +134,30 @@ export interface DbWithdrawal {
   tx_index: number | null;
   event_idx: number;
   exchange_address: Address;
+  event_time: number | null; // in seconds
+}
+
+export interface DbKline {
+  time: number; // in milliseconds; end of interval
+  open: string; // open px in interval
+  high: string; // high px in interval
+  low: string; // low px  in interval
+  close: string; // close px in interval
+  volume: string; // total volume in base asset in interval
+  trades: number; // total trades in interval
+  buy_volume: string; // total base volume for taker buyers in interval
+  buy_quote_volume: string; // total quote volume for taker in interval
+  start_time: number; // in mills; start of interval
+}
+
+export interface MarketStat {
+  market: {
+    base: ERC20Token;
+    quote: ERC20Token;
+    is_ecosystem_book: boolean;
+  };
+  quote_volume: string;
+  change: string;
+  low: string;
+  high: string;
 }

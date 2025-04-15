@@ -1,10 +1,12 @@
 import { Result } from "../../response_types";
 import {
   DbDeposit,
+  DbKline,
   DbOrder,
   DbRollup,
   DbTrade,
   DbWithdrawal,
+  MarketStat,
   TraderVolume,
 } from "./types";
 import { BaseHttpAPI } from "../http/BaseHttpAPI";
@@ -45,6 +47,16 @@ export interface TradesByTickerParams {
   cursor?: string | null;
   num?: string;
   reverse?: boolean;
+}
+export interface DbKlineByTickerParams {
+  pair: {
+    base: ERC20Token;
+    quote: ERC20Token;
+    is_ecosystem_book: boolean;
+  };
+  cursor?: string | null;
+  num?: string;
+  duration: string;
 }
 
 /**
@@ -231,6 +243,51 @@ export class IndexerAPI extends BaseHttpAPI {
     return await this.get<Result<DbWithdrawal[]>>(
       path,
       { cursor, num, reverse },
+      false,
+      [],
+      (o: any) => o,
+    );
+  }
+
+  /**
+   * Retrieves klines data for particular ticker.
+   * starting from the earliest
+   * @param pair - klines for the associated traded pair
+   * @param duration format: <number>s - seconds, <number>m - minutes, <number>h - hours, <number>d - days, check what indexer can provide basically
+   * @param cursor
+   * @param num
+   * @returns A Promise that resolves with the kline[] data result.
+   */
+  public async getKlineByTicker({
+    pair,
+    duration,
+    cursor = null,
+    num = "50",
+  }: DbKlineByTickerParams): Promise<
+    Result<{ data: DbKline[]; cursor: string | null }>
+  > {
+    return await this.get<Result<{ data: DbKline[]; cursor: string | null }>>(
+      `/kline/${pair.base}/${pair.quote}/${pair.is_ecosystem_book}`,
+      { cursor, num, duration },
+      false,
+      [],
+      (o: any) => o,
+    );
+  }
+
+  /**
+   * Retrieves market stats by duration
+   * @param duration format: <number>s - seconds, <number>m - minutes, <number>h - hours, <number>d - days, check what indexer can provide basically
+   * @returns A Promise that resolves with the market stats.
+   */
+  public async getMarketStats({
+    duration,
+  }: {
+    duration: string;
+  }): Promise<Result<MarketStat[]>> {
+    return await this.get<Result<MarketStat[]>>(
+      `/stats/market-stat`,
+      { duration },
       false,
       [],
       (o: any) => o,
