@@ -503,7 +503,10 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
               e.balance,
               this.erc20ToDecimals[e.token],
             ),
-            locked: e.locked[this.erc20ToDecimals[e.token]],
+            locked: formattedDecimalToBigInt(
+              e.locked,
+              this.erc20ToDecimals[e.token],
+            ),
           };
         });
         return o;
