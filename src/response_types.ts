@@ -28,6 +28,7 @@ export interface BBO {
   bid?: TableLevel | null; // The best bid level.
   ask?: TableLevel | null; // The best ask level.
   ts: number; // The timestamp when the BBO was sent.
+  pair: TradedPair; // The traded pair associated with the BBO.
 }
 
 /**
@@ -36,6 +37,7 @@ export interface BBO {
 export interface Table {
   bids: [bigint, bigint, number][]; // Array of bid levels [price, volume, orders].
   asks: [bigint, bigint, number][]; // Array of ask levels [price, volume, orders].
+  msg_id: bigint; // The message ID of the snapshot.
 }
 
 /**
@@ -43,8 +45,10 @@ export interface Table {
  */
 export interface Snapshot {
   levels: Table; // The levels of the order book.
-  msg_id: string; // The message ID of the snapshot.
   time: number; // The timestamp when the snapshot was taken.
+  msg_ids_start: string; // The starting message ID of the snapshot.
+  msg_ids_end: string; // The ending message ID of the snapshot.
+  pair: TradedPair; // The traded pair associated with the snapshot.
 }
 
 /**
@@ -53,6 +57,9 @@ export interface Snapshot {
 export interface TableUpdate extends Table {
   msg_id: bigint; // The message ID of the update.
   time: number; // The timestamp when the update was received.
+  pair: TradedPair; // The traded pair associated with the update.
+  msg_ids_start: bigint; // The starting message ID of the snapshot.
+  msg_ids_end: bigint;
 }
 
 /**
