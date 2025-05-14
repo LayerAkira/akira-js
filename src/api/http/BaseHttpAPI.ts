@@ -9,7 +9,7 @@ export class BaseHttpAPI {
   constructor(
     apiBaseUrl: string,
     logger?: (arg: string) => void,
-    timeoutMillis: number = 10 * 1000,
+    timeoutMillis: number = 60 * 1000,
   ) {
     this.apiBaseUrl = apiBaseUrl;
     this.logger = logger ?? ((arg: string) => arg);

@@ -2,7 +2,7 @@ import { LayerAkiraHttpAPI, LayerAkiraWSSAPI } from "./api";
 import { Address } from "./types";
 import { ERC20Token, ERCToDecimalsMap, TokenAddressMap } from "./request_types";
 import { LayerAkiraContract } from "./api/contract/LayerAkiraContract";
-import { Abi, RpcProvider } from "starknet";
+import { RpcProvider } from "starknet";
 
 /**
  * Interface representing the configuration for the LayerAkira SDK.
@@ -20,6 +20,7 @@ export interface SDKConfiguration {
   tradingAccount?: Address; // if jwt token provided then associated signer and tradingAccount must be specified
   signer?: Address;
   logger?: (arg: string) => void;
+  timeoutMillis?: number;
 }
 
 /**
@@ -47,6 +48,7 @@ export class LayerAkiraSDK {
       ercToDecimals,
       config.baseFeeToken,
       config.logger,
+      config.timeoutMillis,
     );
     this.akiraWss = new LayerAkiraWSSAPI(
       config.wssPath,
