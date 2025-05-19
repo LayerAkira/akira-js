@@ -236,9 +236,10 @@ export class OrderConstructor {
       pair: pair,
       isEcosystemBook: false,
     };
+    const sorFeeTicker = this.getSorTickerForCharge(ticker, subPath);
 
     let fees = this.buildFees(
-      ticker,
+      sorFeeTicker,
       fixedFeesToReceiptAmount,
       gasPriceInChainToken,
       gasFeeToken,
@@ -279,7 +280,7 @@ export class OrderConstructor {
       trader,
       sorCtx,
       this.buildFees(
-        ticker,
+        sorFeeTicker,
         fixedFeesToReceiptAmount,
         gasPriceInChainToken,
         gasFeeToken,
@@ -289,6 +290,7 @@ export class OrderConstructor {
         0,
         0,
       ),
+      sorFeeTicker,
     );
   }
 
@@ -316,6 +318,7 @@ export class OrderConstructor {
    * @param trader
    * @param sorCtx
    * @param orderFee
+   * @param feeTicker
    * @returns The constructed order.
    */
   public buildOrder(
@@ -341,6 +344,7 @@ export class OrderConstructor {
     trader?: Address,
     sorCtx?: SorContext,
     orderFee?: OrderFee,
+    feeTicker?: ExchangeTicker,
   ): Order {
     let order: Order = {
       constraints: this.buildConstraints(
@@ -353,7 +357,7 @@ export class OrderConstructor {
       fee:
         orderFee ??
         this.buildFees(
-          ticker,
+          feeTicker ?? ticker,
           apply_to_receipt_amount,
           gasPriceInChainToken,
           gasFeeToken,
@@ -437,5 +441,28 @@ export class OrderConstructor {
         conversion_rate: conversionRate ?? [1n, 1n],
       },
     };
+  }
+
+  private getSorTickerForCharge(
+    leadTicker: ExchangeTicker,
+    path: MinimalTakerOrderInfo[],
+  ): ExchangeTicker {
+    let takerPbips = 0;
+    let ticker = leadTicker;
+    for (const newTicker of [
+      leadTicker,
+      ...path.map((x) => {
+        return { pair: x.ticker, isEcosystemBook: leadTicker.isEcosystemBook };
+      }),
+    ]) {
+      if (!this.exchangeFeeMap.has(newTicker)) continue;
+      // reason by taker fees
+      const feeAmount = this.exchangeFeeMap.get(newTicker)[1];
+      if (feeAmount > takerPbips) {
+        takerPbips += feeAmount;
+        ticker = newTicker;
+      }
+    }
+    return ticker;
   }
 }
