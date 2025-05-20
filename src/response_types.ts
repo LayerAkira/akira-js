@@ -33,16 +33,16 @@ export interface BBO {
 /**
  * Represents the order book table.
  */
-export interface Table {
-  bids: [bigint, bigint, number][]; // Array of bid levels [price, volume, orders].
-  asks: [bigint, bigint, number][]; // Array of ask levels [price, volume, orders].
+export interface Table<T extends string | bigint> {
+  bids: [T, T, number][]; // Array of bid levels [price, volume, orders].
+  asks: [T, T, number][]; // Array of ask levels [price, volume, orders].
 }
 
 /**
  * Represents a snapshot of the order book.
  */
-export interface Snapshot {
-  levels: Table; // The levels of the order book.
+export interface Snapshot<T extends string | bigint> {
+  levels: Table<T>; // The levels of the order book.
   msg_id: string; // The message ID of the snapshot.
   time: number; // The timestamp when the snapshot was taken.
 }
@@ -50,7 +50,7 @@ export interface Snapshot {
 /**
  * Represents an update to the order book table.
  */
-export interface TableUpdate extends Table {
+export interface TableUpdate<T extends string | bigint> extends Table<T> {
   msg_id: bigint; // The message ID of the update.
   time: number; // The timestamp when the update was received.
 }
