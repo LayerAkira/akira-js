@@ -129,6 +129,18 @@ export interface FillTransactionInfo {
 }
 
 /**
+ * Represent validation error for WITHDRAW/CANCEL_ALL and etc
+ */
+export interface PrivateReport {
+  client: Address;
+  report_type: string;
+  req_hash: bigint;
+  entity_hash: bigint;
+  error_code_orderbook: string | undefined;
+  tx_hash: string | undefined;
+}
+
+/**
  * Represents result of cancel all by ticker indicating that exchange cancelled all user orders for particular ExchangeTicker
  */
 export interface CancelAllReport {
