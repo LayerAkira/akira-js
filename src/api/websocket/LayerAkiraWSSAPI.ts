@@ -49,7 +49,7 @@ export interface ILayerAkiraWSSAPI {
    */
   subscribeOnMarketData(
     clientCb: (
-      evt: TableUpdate | BBO | Trade | SocketEvent.DISCONNECT,
+      evt: TableUpdate<bigint | string> | BBO | Trade | SocketEvent.DISCONNECT,
     ) => Promise<void>,
     eventType: SocketEvent.BBO | SocketEvent.BOOK_DELTA | SocketEvent.TRADE,
     ticker: ExchangeTicker,
@@ -281,7 +281,7 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
 
   public async subscribeOnMarketData(
     clientCb: (
-      evt: TableUpdate | BBO | SocketEvent.DISCONNECT,
+      evt: TableUpdate<bigint | string> | BBO | SocketEvent.DISCONNECT,
     ) => Promise<void>,
     event: SocketEvent.BBO | SocketEvent.TRADE | SocketEvent.BOOK_DELTA,
     ticker: ExchangeTicker,

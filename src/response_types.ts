@@ -34,17 +34,18 @@ export interface BBO {
 /**
  * Represents the order book table.
  */
-export interface Table {
-  bids: [bigint, bigint, number][]; // Array of bid levels [price, volume, orders].
-  asks: [bigint, bigint, number][]; // Array of ask levels [price, volume, orders].
+export interface Table<T extends string | bigint> {
+  bids: [T, T, number][]; // Array of bid levels [price, volume, orders].
+  asks: [T, T, number][]; // Array of ask levels [price, volume, orders].
   msg_id: bigint; // The message ID of the snapshot.
 }
 
 /**
  * Represents a snapshot of the order book.
  */
-export interface Snapshot {
-  levels: Table; // The levels of the order book.
+export interface Snapshot<T extends string | bigint> {
+  levels: Table<T>; // The levels of the order book.
+  msg_id: string; // The message ID of the snapshot.
   time: number; // The timestamp when the snapshot was taken.
   msg_ids_start: string; // The starting message ID of the snapshot.
   msg_ids_end: string; // The ending message ID of the snapshot.
@@ -54,7 +55,7 @@ export interface Snapshot {
 /**
  * Represents an update to the order book table.
  */
-export interface TableUpdate extends Table {
+export interface TableUpdate<T extends string | bigint> extends Table<T> {
   msg_id: bigint; // The message ID of the update.
   time: number; // The timestamp when the update was received.
   pair: TradedPair; // The traded pair associated with the update.
@@ -133,6 +134,18 @@ export interface FillTransactionInfo {
   order_hash: string;
   source: string;
   old_tx_hash: string;
+}
+
+/**
+ * Represent validation error for WITHDRAW/CANCEL_ALL and etc
+ */
+export interface PrivateReport {
+  client: Address;
+  report_type: string;
+  req_hash: bigint;
+  entity_hash: bigint;
+  error_code_orderbook: string | undefined;
+  tx_hash: string | undefined;
 }
 
 /**

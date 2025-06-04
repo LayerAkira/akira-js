@@ -185,6 +185,7 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
    * @param quote - The quote ERC20 symbol.
    * @param levels - How many levels of book should be retrieved, -1 indicating all levels
    * @param to_ecosystem_book - Indicates whether to retrieve snapshot from the ecosystem book or router book
+   * @param applyParseInt
    * @returns A Promise that resolves with the book Snapshot result.
    */
   public async getSnapshot(
@@ -192,7 +193,8 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
     quote: ERC20Token,
     to_ecosystem_book: boolean,
     levels: number = -1,
-  ): Promise<Result<Snapshot>> {
+    applyParseInt: boolean = true,
+  ): Promise<Result<Snapshot<bigint | string>>> {
     return await this.get(
       "/book/snapshot",
       {
@@ -201,22 +203,26 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
         to_ecosystem_book: +to_ecosystem_book,
         levels: levels,
       },
-      true,
+      applyParseInt,
       [],
       (o: any) => {
         o.levels.bids = o.levels.bids.map((lst: any) =>
-          parseTableLvl(
-            lst,
-            this.erc20ToDecimals[base],
-            this.erc20ToDecimals[quote],
-          ),
+          applyParseInt
+            ? parseTableLvl(
+                lst,
+                this.erc20ToDecimals[base],
+                this.erc20ToDecimals[quote],
+              )
+            : lst,
         );
         o.levels.asks = o.levels.asks.map((lst: any) =>
-          parseTableLvl(
-            lst,
-            this.erc20ToDecimals[base],
-            this.erc20ToDecimals[quote],
-          ),
+          applyParseInt
+            ? parseTableLvl(
+                lst,
+                this.erc20ToDecimals[base],
+                this.erc20ToDecimals[quote],
+              )
+            : lst,
         );
         return o;
       },

@@ -42,6 +42,7 @@ export class LayerAkiraContract {
   private readonly executorComponentKey: string;
   private readonly depositComponentKey: string;
   private readonly coreContract: Contract;
+  // @ts-ignore
   private readonly routerContract: Contract;
   private readonly executorContract: Contract;
 

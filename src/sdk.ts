@@ -3,6 +3,7 @@ import { Address } from "./types";
 import { ERC20Token, ERCToDecimalsMap, TokenAddressMap } from "./request_types";
 import { LayerAkiraContract } from "./api/contract/LayerAkiraContract";
 import { RpcProvider } from "starknet";
+import { LayerAkiraUIQuoter } from "./api/http/UIQuoter";
 
 /**
  * Interface representing the configuration for the LayerAkira SDK.
@@ -21,6 +22,7 @@ export interface SDKConfiguration {
   signer?: Address;
   logger?: (arg: string) => void;
   timeoutMillis?: number;
+  apiUIQuoter?: string;
 }
 
 /**
@@ -31,7 +33,7 @@ export class LayerAkiraSDK {
   public akiraHttp: LayerAkiraHttpAPI;
   public akiraWss: LayerAkiraWSSAPI;
   public akiraContract: LayerAkiraContract;
-
+  public akiraQuoter: LayerAkiraUIQuoter;
   /**
    * Create a new instance of LayerAkiraSDK.
    * @param config
@@ -61,6 +63,13 @@ export class LayerAkiraSDK {
       config.executorAddress,
       config.routerAddress,
       new RpcProvider({ nodeUrl: rpcUrlProvider }),
+    );
+    this.akiraQuoter = new LayerAkiraUIQuoter(
+      config.apiUIQuoter!,
+      ercToDecimals,
+      config.baseFeeToken,
+      config.logger,
+      config.timeoutMillis,
     );
   }
 }
