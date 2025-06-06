@@ -294,7 +294,9 @@ export class AkiraRollupInputParser {
       AkiraRollupInputParser.fnNameData("fullfillTakerOrder"),
       calldataFulfill,
     ) as any[];
+    // @ts-ignore
     const makers = fullfillParsed[0];
+    // @ts-ignore
     const takerMatched = fullfillParsed[1];
 
     return {
