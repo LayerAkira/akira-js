@@ -237,10 +237,12 @@ export class IndexerAPI extends BaseHttpAPI {
     cursor = null,
     num = 50,
     reverse = false,
-  }: WithdrawEventParams): Promise<Result<DbWithdrawal[]>> {
+  }: WithdrawEventParams): Promise<
+    Result<{ data: DbWithdrawal[]; cursor: string }>
+  > {
     let path = `/withdrawals/${trader}`;
     if (token_address !== null) path += "/" + token_address;
-    return await this.get<Result<DbWithdrawal[]>>(
+    return await this.get<Result<{ data: DbWithdrawal[]; cursor: string }>>(
       path,
       { cursor, num, reverse },
       false,
