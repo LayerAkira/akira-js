@@ -68,7 +68,6 @@ const fixedFeeType = {
     { name: "recipient", type: "felt" },
     { name: "maker_pbips", type: "felt" },
     { name: "taker_pbips", type: "felt" },
-    { name: "apply_to_receipt_amount", type: "bool" },
   ],
 };
 
@@ -76,6 +75,8 @@ const orderFeeType = {
   OrderFee: [
     { name: "trade_fee", type: "FixedFee" },
     { name: "router_fee", type: "FixedFee" },
+    { name: "integrator_fee", type: "FixedFee" },
+    { name: "apply_to_receipt_amount", type: "bool" },
     { name: "gas_fee", type: "GasFee" },
   ],
 };
@@ -143,6 +144,7 @@ const cancelType = {
     { name: "maker", type: "felt" },
     { name: "order_hash", type: "felt" },
     { name: "salt", type: "felt" },
+    { name: "sign_scheme", type: "felt" },
   ],
 };
 
@@ -152,6 +154,7 @@ const cancelAllType = {
     { name: "maker", type: "felt" },
     { name: "salt", type: "felt" },
     { name: "ticker", type: "Ticker" },
+    { name: "sign_scheme", type: "felt" },
   ],
   Ticker: [
     { name: "base", type: "felt" },
@@ -323,10 +326,10 @@ export function getCancelOrderSignData(
     domain: domain,
     message:
       cancel.order_hash !== null
-        ? cancel
+        ? { ...cancel, salt: "0x" + cancel.salt.toString(16) }
         : {
             maker: cancel.maker,
-            salt: cancel.salt,
+            salt: "0x" + cancel.salt.toString(16),
             ticker: {
               base: tokenMapping
                 ? tokenMapping[cancel.ticker!.pair.base]
@@ -336,6 +339,7 @@ export function getCancelOrderSignData(
                 : cancel.ticker!.pair.quote,
               to_ecosystem_book: cancel.ticker?.isEcosystemBook,
             },
+            sign_scheme: cancel.sign_scheme,
           },
   };
 }

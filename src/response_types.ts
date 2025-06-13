@@ -28,31 +28,39 @@ export interface BBO {
   bid?: TableLevel | null; // The best bid level.
   ask?: TableLevel | null; // The best ask level.
   ts: number; // The timestamp when the BBO was sent.
+  pair: TradedPair; // The traded pair associated with the BBO.
 }
 
 /**
  * Represents the order book table.
  */
-export interface Table {
-  bids: [bigint, bigint, number][]; // Array of bid levels [price, volume, orders].
-  asks: [bigint, bigint, number][]; // Array of ask levels [price, volume, orders].
+export interface Table<T extends string | bigint> {
+  bids: [T, T, number][]; // Array of bid levels [price, volume, orders].
+  asks: [T, T, number][]; // Array of ask levels [price, volume, orders].
+  msg_id: bigint; // The message ID of the snapshot.
 }
 
 /**
  * Represents a snapshot of the order book.
  */
-export interface Snapshot {
-  levels: Table; // The levels of the order book.
+export interface Snapshot<T extends string | bigint> {
+  levels: Table<T>; // The levels of the order book.
   msg_id: string; // The message ID of the snapshot.
   time: number; // The timestamp when the snapshot was taken.
+  msg_ids_start: string; // The starting message ID of the snapshot.
+  msg_ids_end: string; // The ending message ID of the snapshot.
+  pair: TradedPair; // The traded pair associated with the snapshot.
 }
 
 /**
  * Represents an update to the order book table.
  */
-export interface TableUpdate extends Table {
+export interface TableUpdate<T extends string | bigint> extends Table<T> {
   msg_id: bigint; // The message ID of the update.
   time: number; // The timestamp when the update was received.
+  pair: TradedPair; // The traded pair associated with the update.
+  msg_ids_start: bigint; // The starting message ID of the snapshot.
+  msg_ids_end: bigint;
 }
 
 /**
@@ -91,6 +99,13 @@ export enum MatchingEngineResult {
   NOT_ENOUGH_LIQUIDITY = "NOT_ENOUGH_LIQUIDITY",
   GAS_COST = "GAS_COST", // gas higher than settled trades post fees
   FAILED_VALIDATION = "FAILED_VALIDATION", // deep validation of order was unsuccessful
+  MAX_SPENT_FAILED = "MAX_SPENT_FAILED",
+}
+
+export interface SorReport {
+  leftovers: { ERC20Token: string }; // note not normalized
+  receive_token: ERC20Token;
+  fill_receive_qty: bigint;
 }
 /**
  * Represents an execution report for an order.
@@ -107,6 +122,7 @@ export interface ExecutionReport {
   is_sell_side: boolean; // Indicates whether the order was on the sell side.
   status: OrderStatus; // The status of the order.
   matcher_result: MatchingEngineResult; // result that yields matching engine
+  sor?: SorReport;
 }
 
 /**
@@ -118,6 +134,18 @@ export interface FillTransactionInfo {
   order_hash: string;
   source: string;
   old_tx_hash: string;
+}
+
+/**
+ * Represent validation error for WITHDRAW/CANCEL_ALL and etc
+ */
+export interface PrivateReport {
+  client: Address;
+  report_type: string;
+  req_hash: bigint;
+  entity_hash: bigint;
+  error_code_orderbook: string | undefined;
+  tx_hash: string | undefined;
 }
 
 /**

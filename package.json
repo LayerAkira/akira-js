@@ -1,6 +1,6 @@
 {
   "name": "layerakira-js",
-  "version": "1.0.1-beta.29",
+  "version": "1.0.1-test.52",
   "description": "SDK for interaction with LayerAkira exchange",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -38,8 +38,8 @@
   "dependencies": {
     "@types/websocket": "^1.0.10",
     "dotenv": "^16.4.5",
+    "starknet": "==6.24.1",
     "ethers": "^6.12.1",
-    "starknet": "==6.17.0",
     "websocket": "^1.0.35"
   },
   "ts-node": {

@@ -3,10 +3,13 @@ import { NULL_ADDRESS } from "../constants";
 import {
   Constraints,
   ERC20Token,
+  MinimalTakerOrderInfo,
   Order,
+  OrderFee,
   OrderSide,
   Quantity,
   SignScheme,
+  SorContext,
   STPMode,
   TradedPair,
 } from "../request_types";
@@ -134,6 +137,7 @@ export class OrderConstructor {
       STPMode.NONE,
       signScheme,
       trader,
+      undefined,
     );
   }
 
@@ -180,6 +184,113 @@ export class OrderConstructor {
       STPMode.NONE,
       signScheme,
       trader,
+      undefined,
+    );
+  }
+
+  /**
+   * Builds a simple  sor router swap order.
+   * @param subPath
+   * @param pair The traded pair for the swap.
+   * @param price The protection price of the swap.
+   * @param qty The quantity of the swap.
+   * @param numberOfSwapsAllowed The number of swaps allowed.
+   * @param side The side of the order (BUY or SELL).
+   * @param gasPriceInChainToken The gas price in the chain token.
+   * @param externalFunds Indicates if funds for the trades are taken externally or from LayerAkira smart contract.
+   * @param minReceiveAmount The minimum receive amount for the swap. aka slippage
+   * @param gasFeeToken token in which trader decided to pay for gas
+   * @param conversionRate the rate [base gas, gasFeeToken]
+   * @param durationValid The validity duration of the order.
+   * @param traderNonce The nonce of the trader (optional). if not specified default from constructor would be used
+   * @param signScheme
+   * @param trader
+   * @param lastQty
+   * @param maxSpendAmount
+   * @param fixedFeesToReceiptAmount
+   * @param allowNonAtomic
+   * @returns The constructed order.
+   */
+  public buildSORRouterSwap(
+    subPath: MinimalTakerOrderInfo[],
+    pair: TradedPair,
+    price: bigint,
+    qty: Quantity,
+    numberOfSwapsAllowed: number,
+    side: OrderSide,
+    gasPriceInChainToken: bigint,
+    externalFunds: boolean,
+    minReceiveAmount?: bigint,
+    gasFeeToken?: string,
+    conversionRate?: [bigint, bigint],
+    durationValid: number = 365 * 24 * 60 * 60,
+    traderNonce?: number,
+    signScheme?: SignScheme,
+    trader?: Address,
+    lastQty?: Quantity,
+    maxSpendAmount?: bigint,
+    fixedFeesToReceiptAmount: boolean = true,
+    allowNonAtomic: boolean = false,
+  ) {
+    const ticker = {
+      pair: pair,
+      isEcosystemBook: false,
+    };
+    const sorFeeTicker = this.getSorTickerForCharge(ticker, subPath);
+
+    let fees = this.buildFees(
+      sorFeeTicker,
+      fixedFeesToReceiptAmount,
+      gasPriceInChainToken,
+      gasFeeToken,
+      conversionRate,
+    );
+
+    const sorCtx: SorContext = {
+      last_base_qty: lastQty?.base_qty ?? 0n,
+      last_quote_qty: lastQty?.quote_qty ?? 0n,
+      order_fee: fees,
+      allow_non_atomic: allowNonAtomic,
+      path: subPath,
+      min_receive_amount: minReceiveAmount,
+      max_spend_amount: maxSpendAmount,
+    };
+
+    const fullFillOnly = maxSpendAmount === undefined || maxSpendAmount == 0n;
+    return this.buildOrder(
+      ticker,
+      price,
+      qty,
+      numberOfSwapsAllowed,
+      side,
+      gasPriceInChainToken,
+      externalFunds,
+      true,
+      fixedFeesToReceiptAmount,
+      false,
+      false,
+      fullFillOnly,
+      0n,
+      durationValid,
+      traderNonce,
+      gasFeeToken,
+      conversionRate,
+      STPMode.NONE,
+      signScheme,
+      trader,
+      sorCtx,
+      this.buildFees(
+        sorFeeTicker,
+        fixedFeesToReceiptAmount,
+        gasPriceInChainToken,
+        gasFeeToken,
+        conversionRate,
+        0,
+        0,
+        0,
+        0,
+      ),
+      sorFeeTicker,
     );
   }
 
@@ -205,6 +316,9 @@ export class OrderConstructor {
    * @param stp The STP mode for the order.
    * @param signScheme
    * @param trader
+   * @param sorCtx
+   * @param orderFee
+   * @param feeTicker
    * @returns The constructed order.
    */
   public buildOrder(
@@ -228,8 +342,11 @@ export class OrderConstructor {
     stp?: STPMode,
     signScheme?: SignScheme,
     trader?: Address,
+    sorCtx?: SorContext,
+    orderFee?: OrderFee,
+    feeTicker?: ExchangeTicker,
   ): Order {
-    return {
+    let order: Order = {
       constraints: this.buildConstraints(
         minReceiveAmount,
         numberOfSwapsAllowed,
@@ -237,28 +354,15 @@ export class OrderConstructor {
         traderNonce,
         stp,
       ),
-      fee: {
-        trade_fee: {
-          recipient: this.exchangeFeeRecipient,
-          maker_pbips: this.exchangeFeeMap.get(ticker)[0],
-          taker_pbips: this.exchangeFeeMap.get(ticker)[1],
-          apply_to_receipt_amount: apply_to_receipt_amount,
-        },
-        router_fee: {
-          recipient: this.routerFeeRecipient,
-          maker_pbips: this.routerFeeMap.get(ticker)[0],
-          taker_pbips: this.routerFeeMap.get(ticker)[1],
-          apply_to_receipt_amount: apply_to_receipt_amount,
-        },
-        gas_fee: {
-          gas_per_action: ticker.isEcosystemBook
-            ? this.ecosystemGasSteps
-            : this.routerGasSteps,
-          fee_token: gasFeeToken ?? this.nativeGasFeeToken,
-          max_gas_price: gasPriceInChainToken,
-          conversion_rate: conversionRate ?? [1n, 1n],
-        },
-      },
+      fee:
+        orderFee ??
+        this.buildFees(
+          feeTicker ?? ticker,
+          apply_to_receipt_amount,
+          gasPriceInChainToken,
+          gasFeeToken,
+          conversionRate,
+        ),
       flags: {
         full_fill_only: fullFillOnly,
         best_level_only: bestLevelOnly,
@@ -276,6 +380,8 @@ export class OrderConstructor {
       source: this.source,
       sign_scheme: signScheme ?? this.signScheme,
     };
+    if (sorCtx !== undefined) order.sor = sorCtx;
+    return order;
   }
 
   private buildConstraints(
@@ -294,5 +400,69 @@ export class OrderConstructor {
       min_receive_amount: minReceiveAmount,
       router_signer: this.routerSigner,
     };
+  }
+  private buildFees(
+    ticker: ExchangeTicker,
+    apply_to_receipt_amount: boolean,
+    gasPriceInChainToken: bigint,
+    gasFeeToken?: ERC20Token,
+    conversionRate?: [bigint, bigint],
+    exchange_pbips_taker?: number,
+    exchange_pbips_maker?: number,
+    router_pbips_taker?: number,
+    router_pbips_maker?: number,
+    integrator_pbips_taker?: number,
+    integrator_pbips_maker?: number,
+    integrator_address?: Address,
+  ) {
+    return {
+      trade_fee: {
+        recipient: this.exchangeFeeRecipient,
+        maker_pbips: exchange_pbips_maker ?? this.exchangeFeeMap.get(ticker)[0],
+        taker_pbips: exchange_pbips_taker ?? this.exchangeFeeMap.get(ticker)[1],
+      },
+      router_fee: {
+        recipient: this.routerFeeRecipient,
+        maker_pbips: router_pbips_maker ?? this.routerFeeMap.get(ticker)[0],
+        taker_pbips: router_pbips_taker ?? this.routerFeeMap.get(ticker)[1],
+      },
+      integrator_fee: {
+        recipient: integrator_address ?? this.routerFeeRecipient,
+        maker_pbips: integrator_pbips_maker ?? 0,
+        taker_pbips: integrator_pbips_taker ?? 0,
+      },
+      apply_to_receipt_amount: apply_to_receipt_amount,
+      gas_fee: {
+        gas_per_action: ticker.isEcosystemBook
+          ? this.ecosystemGasSteps
+          : this.routerGasSteps,
+        fee_token: gasFeeToken ?? this.nativeGasFeeToken,
+        max_gas_price: gasPriceInChainToken,
+        conversion_rate: conversionRate ?? [1n, 1n],
+      },
+    };
+  }
+
+  private getSorTickerForCharge(
+    leadTicker: ExchangeTicker,
+    path: MinimalTakerOrderInfo[],
+  ): ExchangeTicker {
+    let takerPbips = 0;
+    let ticker = leadTicker;
+    for (const newTicker of [
+      leadTicker,
+      ...path.map((x) => {
+        return { pair: x.ticker, isEcosystemBook: leadTicker.isEcosystemBook };
+      }),
+    ]) {
+      if (!this.exchangeFeeMap.has(newTicker)) continue;
+      // reason by taker fees
+      const feeAmount = this.exchangeFeeMap.get(newTicker)[1];
+      if (feeAmount > takerPbips) {
+        takerPbips += feeAmount;
+        ticker = newTicker;
+      }
+    }
+    return ticker;
   }
 }

@@ -1,14 +1,63 @@
 import { Result } from "../../response_types";
 import {
   DbDeposit,
+  DbKline,
   DbOrder,
   DbRollup,
   DbTrade,
   DbWithdrawal,
+  MarketStat,
   TraderVolume,
 } from "./types";
 import { BaseHttpAPI } from "../http/BaseHttpAPI";
 import { ERC20Token } from "../../request_types";
+
+export interface TraderOrdersParams {
+  trader: string;
+  pair?: {
+    base: ERC20Token;
+    quote: ERC20Token;
+    is_ecosystem_book: boolean;
+  } | null;
+  cursor?: string | null;
+  num?: string;
+  skip_dependant_orders?: boolean;
+  limit_orders?: boolean | null;
+  reverse?: boolean;
+}
+
+interface EventParams {
+  trader: string;
+  token_address?: ERC20Token | null;
+  cursor?: string | null;
+  num?: number;
+  reverse?: boolean;
+}
+
+interface DepositEventParams extends EventParams {}
+
+interface WithdrawEventParams extends EventParams {}
+
+export interface TradesByTickerParams {
+  pair: {
+    base: ERC20Token;
+    quote: ERC20Token;
+    is_ecosystem_book: boolean;
+  };
+  cursor?: string | null;
+  num?: string;
+  reverse?: boolean;
+}
+export interface DbKlineByTickerParams {
+  pair: {
+    base: ERC20Token;
+    quote: ERC20Token;
+    is_ecosystem_book: boolean;
+  };
+  cursor?: string | null;
+  num?: string;
+  duration: string;
+}
 
 /**
  * The API class for the Indexer SDK.
@@ -44,20 +93,20 @@ export class IndexerAPI extends BaseHttpAPI {
    * @param pair - trades for associated traded pair
    * @param cursor - {maker_hash}_{taker_hash} of last processed entry
    * @param num
+   * @param reverse
    * @returns A Promise that resolves with the trade data result.
    */
-  public async getTradesByTicker(
-    pair: {
-      base: ERC20Token;
-      quote: ERC20Token;
-      is_ecosystem_book: boolean;
-    },
-    cursor: string | null = null,
-    num: string = "20",
-  ): Promise<Result<DbTrade[]>> {
-    return await this.get<Result<DbTrade[]>>(
+  public async getTradesByTicker({
+    pair,
+    cursor = null,
+    num = "50",
+    reverse = false,
+  }: TradesByTickerParams): Promise<
+    Result<{ data: DbTrade[]; cursor: string | null }>
+  > {
+    return await this.get<Result<{ data: DbTrade[]; cursor: string | null }>>(
       `/trades/${pair.base}/${pair.quote}/${pair.is_ecosystem_book}`,
-      cursor !== null ? { cursor, num } : { num },
+      { cursor, num, reverse },
       false,
       [],
       (o: any) => o,
@@ -103,23 +152,29 @@ export class IndexerAPI extends BaseHttpAPI {
    * @param pair - optional to skew on particular traded pair
    * @param cursor - Cursor to paginate. use hash of the last processed order
    * @param num - Number of orders to fetch.
+   * @param skip_dependant_orders - should synthetic part of lead order be skipped
+   * @param limit_orders
+   * @param reverse
    * @returns A Promise that resolves with a list of trader orders. from latest to oldest
    */
-  public async getTraderOrders(
-    trader: string,
-    pair: {
-      base: ERC20Token;
-      quote: ERC20Token;
-      is_ecosystem_book: boolean;
-    } | null = null,
-    cursor: string | null = null,
-    num: string = "20",
-  ): Promise<Result<DbOrder[]>> {
-    return await this.get<Result<DbOrder[]>>(
+  public async getTraderOrders({
+    trader,
+    pair = null,
+    cursor = null,
+    num = "50",
+    skip_dependant_orders = true,
+    limit_orders = null,
+    reverse = false,
+  }: TraderOrdersParams): Promise<
+    Result<{ data: DbOrder[]; cursor: string | null }>
+  > {
+    return await this.get<Result<{ data: DbOrder[]; cursor: string | null }>>(
       pair === null
         ? `/orders/${trader}`
         : `/orders/${trader}/${pair.base}/${pair.quote}/${pair.is_ecosystem_book}`,
-      cursor !== null ? { cursor, num } : { num },
+      limit_orders !== null
+        ? { cursor, num, skip_dependant_orders, reverse, limit_orders }
+        : { cursor, num, skip_dependant_orders, reverse },
       false,
       [],
       (o: any) => o,
@@ -147,25 +202,24 @@ export class IndexerAPI extends BaseHttpAPI {
    * @param token_address - filter to skew on specific token address
    * @param cursor - Cursor to paginate. use {tx_hash}_{event_idx} as cursor
    * @param num - Number of orders to fetch.
+   * @param reverse
    * @returns A Promise that resolves with a list of db deposits. from latest to oldest
    */
-  public async getTraderDeposits(
-    trader: string,
-    token_address: string | null = null,
-    cursor: string | null = null,
-    num: number = 20,
-  ): Promise<Result<DbDeposit[]>> {
+  public async getTraderDeposits({
+    trader,
+    token_address = null,
+    cursor = null,
+    num = 50,
+    reverse = false,
+  }: DepositEventParams): Promise<Result<DbDeposit[]>> {
     let path = `/deposits/${trader}`;
     if (token_address !== null) path += "/" + token_address;
     return await this.get<Result<DbDeposit[]>>(
       path,
-      cursor !== null ? { cursor, num } : { num },
+      { cursor, num, reverse },
       false,
       [],
-      (o: any) => {
-        o.forEach((e: any) => (e.amount = BigInt(e.amount)));
-        return o;
-      },
+      (o: any) => o,
     );
   }
 
@@ -174,25 +228,71 @@ export class IndexerAPI extends BaseHttpAPI {
    * @param token_address - Filter by a specific token address.
    * @param cursor - Cursor for pagination, use {tx_hash}_{event_idx}.
    * @param num - Number of withdrawals to fetch.
+   * @param reverse
    * @returns A Promise that resolves with a list of withdrawals, from latest to oldest.
    */
-  public async getTraderWithdrawals(
-    trader: string,
-    token_address: string | null = null,
-    cursor: string | null = null,
-    num: number = 20,
-  ): Promise<Result<DbWithdrawal[]>> {
+  public async getTraderWithdrawals({
+    trader,
+    token_address = null,
+    cursor = null,
+    num = 50,
+    reverse = false,
+  }: WithdrawEventParams): Promise<
+    Result<{ data: DbWithdrawal[]; cursor: string }>
+  > {
     let path = `/withdrawals/${trader}`;
     if (token_address !== null) path += "/" + token_address;
-    return await this.get<Result<DbWithdrawal[]>>(
+    return await this.get<Result<{ data: DbWithdrawal[]; cursor: string }>>(
       path,
-      cursor !== null ? { cursor, num } : { num },
+      { cursor, num, reverse },
       false,
       [],
-      (o: any) => {
-        o.forEach((e: any) => (e.amount = BigInt(e.amount)));
-        return o;
-      },
+      (o: any) => o,
+    );
+  }
+
+  /**
+   * Retrieves klines data for particular ticker.
+   * starting from the earliest
+   * @param pair - klines for the associated traded pair
+   * @param duration format: <number>s - seconds, <number>m - minutes, <number>h - hours, <number>d - days, check what indexer can provide basically
+   * @param cursor
+   * @param num
+   * @returns A Promise that resolves with the kline[] data result.
+   */
+  public async getKlineByTicker({
+    pair,
+    duration,
+    cursor = null,
+    num = "50",
+  }: DbKlineByTickerParams): Promise<
+    Result<{ data: DbKline[]; cursor: string | null }>
+  > {
+    return await this.get<Result<{ data: DbKline[]; cursor: string | null }>>(
+      `/kline/${pair.base}/${pair.quote}/${pair.is_ecosystem_book}`,
+      { cursor, num, duration },
+      false,
+      [],
+      (o: any) => o,
+    );
+  }
+
+  /**
+   * Retrieves market stats by duration
+   * @param duration format: <number>s - seconds, <number>m - minutes, <number>h - hours, <number>d - days, check what indexer can provide basically
+   * @returns A Promise that resolves with the market stats.
+   */
+  public async getMarketStats({
+    duration,
+  }: {
+    duration: string;
+  }): Promise<Result<MarketStat[]>> {
+    return await this.get<Result<MarketStat[]>>(
+      `/stats/market-stat`,
+      { duration },
+      false,
+      [],
+      (o: any) => o,
     );
   }
 }

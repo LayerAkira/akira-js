@@ -2,7 +2,8 @@ import { LayerAkiraHttpAPI, LayerAkiraWSSAPI } from "./api";
 import { Address } from "./types";
 import { ERC20Token, ERCToDecimalsMap, TokenAddressMap } from "./request_types";
 import { LayerAkiraContract } from "./api/contract/LayerAkiraContract";
-import { Abi, RpcProvider } from "starknet";
+import { RpcProvider } from "starknet";
+import { LayerAkiraUIQuoter } from "./api/http/UIQuoter";
 
 /**
  * Interface representing the configuration for the LayerAkira SDK.
@@ -20,6 +21,8 @@ export interface SDKConfiguration {
   tradingAccount?: Address; // if jwt token provided then associated signer and tradingAccount must be specified
   signer?: Address;
   logger?: (arg: string) => void;
+  timeoutMillis?: number;
+  apiUIQuoter?: string;
 }
 
 /**
@@ -30,7 +33,7 @@ export class LayerAkiraSDK {
   public akiraHttp: LayerAkiraHttpAPI;
   public akiraWss: LayerAkiraWSSAPI;
   public akiraContract: LayerAkiraContract;
-
+  public akiraQuoter: LayerAkiraUIQuoter;
   /**
    * Create a new instance of LayerAkiraSDK.
    * @param config
@@ -47,6 +50,7 @@ export class LayerAkiraSDK {
       ercToDecimals,
       config.baseFeeToken,
       config.logger,
+      config.timeoutMillis,
     );
     this.akiraWss = new LayerAkiraWSSAPI(
       config.wssPath,
@@ -59,6 +63,13 @@ export class LayerAkiraSDK {
       config.executorAddress,
       config.routerAddress,
       new RpcProvider({ nodeUrl: rpcUrlProvider }),
+    );
+    this.akiraQuoter = new LayerAkiraUIQuoter(
+      config.apiUIQuoter!,
+      ercToDecimals,
+      config.baseFeeToken,
+      config.logger,
+      config.timeoutMillis,
     );
   }
 }

@@ -107,7 +107,6 @@ export interface FixedFee {
   recipient: Address; // The recipient of the fixed fee
   maker_pbips: number; // The maker fee rate in PBIPS (Percentage Basis Points)
   taker_pbips: number; // The taker fee rate in PBIPS (Percentage Basis Points)
-  apply_to_receipt_amount: boolean; // Take fees from spend or receive amount
 }
 
 /**
@@ -126,6 +125,8 @@ export interface GasFee {
 export interface OrderFee {
   trade_fee: FixedFee;
   router_fee: FixedFee;
+  integrator_fee: FixedFee;
+  apply_to_receipt_amount: boolean; // Take fees from spend or receive amount
   gas_fee: GasFee;
 }
 
@@ -166,6 +167,23 @@ interface ExecuteOutsideCall {
   version: string; // Version of snip12, v1, v2
 }
 
+export interface MinimalTakerOrderInfo {
+  price: bigint;
+  ticker: TradedPair;
+  is_sell_side: boolean;
+  base_asset: bigint;
+}
+
+export interface SorContext {
+  path: MinimalTakerOrderInfo[];
+  order_fee: OrderFee;
+  allow_non_atomic: boolean;
+  min_receive_amount?: bigint;
+  max_spend_amount?: bigint;
+  last_base_qty: bigint;
+  last_quote_qty: bigint;
+}
+
 /**
  * Represents a user order on the LayerAkira exchange
  */
@@ -181,6 +199,7 @@ export interface Order {
   source: string; // from where order
   sign_scheme: SignScheme;
   snip9_call?: ExecuteOutsideCall;
+  sor?: SorContext;
 }
 
 /**
@@ -188,6 +207,7 @@ export interface Order {
  */
 export interface ExtendedOrder extends Order {
   state: OrderStateInfo;
+  hash: string;
 }
 
 /**
@@ -216,6 +236,7 @@ export interface CancelRequest {
   order_hash: string | null;
   salt: bigint;
   ticker?: ExchangeTicker;
+  sign_scheme: SignScheme;
 }
 
 /**

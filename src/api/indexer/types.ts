@@ -21,6 +21,7 @@ export interface DbTrade {
   event_idx: number;
   usd_volume: string;
   exchange_address: string;
+  is_sell: boolean;
 }
 
 export interface DbRollup {
@@ -41,6 +42,20 @@ export interface DbRollup {
   trades_count: number;
   takers_count: number;
   makers_count: number;
+  rollup_index: number;
+}
+
+export interface SorClosure {
+  dependent_orders: string[]; // sor orders in path excluding lead order
+  received: string; //received in last order
+  received_asset: ERC20Token; //  # received last asset
+  paid_gas: string; // paid  in sor excluding
+  paid_as_taker_router: string; // paid  in sor excluding lead
+  paid_as_taker_exchange: string; //  # paid  in sor excluding lead
+  trades_as_taker: number; //   in sor excluding lead
+  failed_trades_as_taker: number; // in sor excluding lead
+  gas_token: ERC20Token; // in sor excluding lead
+  fixed_fee_token: ERC20Token; // in sor excluding lead
 }
 
 export interface DbOrder {
@@ -78,6 +93,9 @@ export interface DbOrder {
   quote_asset: string;
   failed_trades_as_taker: number;
   failed_trades_as_maker: number;
+  lead_order: string;
+  previous_order: string;
+  sor: SorClosure;
 }
 
 export interface TraderVolume {
@@ -92,10 +110,11 @@ export interface DbDeposit {
   receiver: Address;
   token_address: Address;
   funder: Address;
-  amount: bigint;
+  amount: string;
   event_idx: number;
   tx_index: number | null;
   event_block: number | null;
+  event_time: number | null; // in seconds
 }
 
 /**
@@ -107,7 +126,7 @@ export interface DbWithdrawal {
   token_address: Address;
   receiver: Address;
   salt: string;
-  amount: bigint;
+  amount: string;
   spent_gas: string;
   gas_token: ERC20Token;
   direct: boolean;
@@ -115,4 +134,30 @@ export interface DbWithdrawal {
   tx_index: number | null;
   event_idx: number;
   exchange_address: Address;
+  event_time: number | null; // in seconds
+}
+
+export interface DbKline {
+  time: number; // in milliseconds; end of interval
+  open: string; // open px in interval
+  high: string; // high px in interval
+  low: string; // low px  in interval
+  close: string; // close px in interval
+  volume: string; // total volume in base asset in interval
+  trades: number; // total trades in interval
+  buy_volume: string; // total base volume for taker buyers in interval
+  buy_quote_volume: string; // total quote volume for taker in interval
+  start_time: number; // in mills; start of interval
+}
+
+export interface MarketStat {
+  market: {
+    base: ERC20Token;
+    quote: ERC20Token;
+    is_ecosystem_book: boolean;
+  };
+  quote_volume: string;
+  change: string;
+  low: string;
+  high: string;
 }

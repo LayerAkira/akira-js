@@ -22,6 +22,7 @@ import {
   convertToBigintRecursively,
 } from "../http/utils";
 import { formattedDecimalToBigInt, parseTableLvl } from "../utils";
+import { getPairKey } from "./utils";
 
 /**
  * Represents a LayerAkira WebSocket API.
@@ -48,7 +49,7 @@ export interface ILayerAkiraWSSAPI {
    */
   subscribeOnMarketData(
     clientCb: (
-      evt: TableUpdate | BBO | Trade | SocketEvent.DISCONNECT,
+      evt: TableUpdate<bigint | string> | BBO | Trade | SocketEvent.DISCONNECT,
     ) => Promise<void>,
     eventType: SocketEvent.BBO | SocketEvent.BOOK_DELTA | SocketEvent.TRADE,
     ticker: ExchangeTicker,
@@ -173,6 +174,14 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
   private listenKeyRefreshInterval: NodeJS.Timeout | null = null;
 
   /**
+   * Array of depth stream listerners based on pairs
+   */
+  private depthListners: Map<
+    string,
+    Array<(evt: TableUpdate<bigint> | SocketEvent.DISCONNECT) => Promise<void>>
+  >;
+
+  /**
    * Constructs a new LayerAkiraWSSAPI instance.
    * @param wsPath - The WebSocket path.
    * @param httpClient - The HTTP client for LayerAkira.
@@ -193,11 +202,88 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
     this.shouldReconnect = shouldReconnect;
     this.isClosed = true;
     this.repeatCoolDownMillis = repeatCoolDownMillis ?? 5 * 1000;
+    this.depthListners = new Map();
+  }
+
+  public async subscribeOnDepthUpdate(
+    ticker: ExchangeTicker,
+    clientCb: (
+      evt: TableUpdate<bigint> | SocketEvent.DISCONNECT,
+    ) => Promise<void>,
+  ): Promise<boolean> {
+    try {
+      let key = getPairKey(ticker.pair);
+      // check if the pair is already subscribed
+      if (this.depthListners.has(key)) {
+        this.depthListners.get(key)?.push(clientCb);
+        return true;
+      }
+      let res = await this.subscribeOnMarketData(
+        (evt) => {
+          return this.handleDepthStream(evt);
+        },
+        SocketEvent.BOOK_DELTA,
+        ticker,
+      );
+      if (res.error !== undefined) {
+        this.logger(
+          `Error subscribing to depth update for ${ticker.pair}: ${res.error}`,
+        );
+        return false;
+      }
+      this.depthListners.set(key, [clientCb]);
+      this.logger(`Subscribed to depth update for ${ticker.pair}`);
+      return true;
+    } catch (e) {
+      this.logger(`Error subscribing to depth update for ${ticker.pair}: ${e}`);
+      return false;
+    }
+  }
+
+  /**
+   * Depth Stream handler function
+   * @param evt - Event object containing depth update or disconnect event.
+   * @returns {Promise<void>}
+   */
+  private async handleDepthStream(
+    evt: TableUpdate<bigint> | BBO | SocketEvent.DISCONNECT,
+  ): Promise<void> {
+    if (typeof evt === "object" && "ts" in evt) {
+      // unreachable bbo
+      return;
+    }
+    if (evt === SocketEvent.DISCONNECT) {
+      this.depthListners.forEach(async (cbs, key) => {
+        let promises: Promise<void>[] = [];
+        if (cbs.length) {
+          cbs.map((cb) => promises.push(cb(SocketEvent.DISCONNECT)));
+        }
+        await Promise.all(promises);
+        this.depthListners.delete(key);
+      });
+      return;
+    }
+    let listeners = this.depthListners.get(getPairKey(evt.pair));
+    if (listeners === undefined || listeners.length === 0) {
+      this.logger(
+        `No listeners found for depth update for ${evt.pair}, skipping`,
+      );
+      return;
+    }
+    listeners.forEach(async (cb) => {
+      try {
+        await cb(evt);
+      } catch (e) {
+        this.logger(
+          `Error handling depth update for ${evt.pair}: ${e}, skipping`,
+        );
+      }
+    });
   }
 
   public async subscribeOnMarketData(
     clientCb: (
-      evt: TableUpdate | BBO | SocketEvent.DISCONNECT,
+      evt: TableUpdate<bigint> | BBO | SocketEvent.DISCONNECT,
     ) => Promise<void>,
     event: SocketEvent.BBO | SocketEvent.TRADE | SocketEvent.BOOK_DELTA,
     ticker: ExchangeTicker,
@@ -565,6 +651,13 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
       json = convertFieldsRecursively(json, this.castByQuote, (e: any) =>
         formattedDecimalToBigInt(e, qDecimals),
       );
+      json.result.pair = pair;
+      if (json.result.sor) {
+        json.result.sor.fill_receive_qty = formattedDecimalToBigInt(
+          json.result.sor.fill_receive_qty,
+          this.httpClient.erc20ToDecimals[json.result.sor.receive_token],
+        );
+      }
     }
 
     let subscription: number;
