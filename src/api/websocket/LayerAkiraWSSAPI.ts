@@ -178,7 +178,7 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
    */
   private depthListners: Map<
     string,
-    Array<(evt: TableUpdate | SocketEvent.DISCONNECT) => Promise<void>>
+    Array<(evt: TableUpdate<bigint> | SocketEvent.DISCONNECT) => Promise<void>>
   >;
 
   /**
@@ -207,7 +207,9 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
 
   public async subscribeOnDepthUpdate(
     ticker: ExchangeTicker,
-    clientCb: (evt: TableUpdate | SocketEvent.DISCONNECT) => Promise<void>,
+    clientCb: (
+      evt: TableUpdate<bigint> | SocketEvent.DISCONNECT,
+    ) => Promise<void>,
   ): Promise<boolean> {
     try {
       let key = getPairKey(ticker.pair);
@@ -244,7 +246,7 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
    * @returns {Promise<void>}
    */
   private async handleDepthStream(
-    evt: TableUpdate | BBO | SocketEvent.DISCONNECT,
+    evt: TableUpdate<bigint> | BBO | SocketEvent.DISCONNECT,
   ): Promise<void> {
     if (typeof evt === "object" && "ts" in evt) {
       // unreachable bbo
@@ -281,7 +283,7 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
 
   public async subscribeOnMarketData(
     clientCb: (
-      evt: TableUpdate<bigint | string> | BBO | SocketEvent.DISCONNECT,
+      evt: TableUpdate<bigint> | BBO | SocketEvent.DISCONNECT,
     ) => Promise<void>,
     event: SocketEvent.BBO | SocketEvent.TRADE | SocketEvent.BOOK_DELTA,
     ticker: ExchangeTicker,

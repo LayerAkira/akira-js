@@ -1,6 +1,6 @@
 import { TradedPair } from "src/request_types";
 import { LayerAkiraWSSAPI } from "./LayerAkiraWSSAPI";
-import { Table, TableUpdate } from "src/response_types";
+import { Snapshot, Table, TableUpdate } from "src/response_types";
 import { ExchangeTicker, SocketEvent } from "./types";
 import { LayerAkiraHttpAPI } from "../http/LayerAkiraHttpAPI";
 import { getPairKey, timeout } from "./utils";
@@ -25,7 +25,7 @@ export class DepthBook {
   /**
    * Depth book data.
    */
-  private pairToBook: Map<string, Table>;
+  private pairToBook: Map<string, Table<bigint>>;
   /**
    * Pair to message id
    */
@@ -33,7 +33,7 @@ export class DepthBook {
   /**
    * Pending delta to apply
    */
-  private pendingEvt: Map<string, Array<TableUpdate>>;
+  private pendingEvt: Map<string, Array<TableUpdate<bigint>>>;
   /**
    * Pair to apply change
    */
@@ -70,12 +70,12 @@ export class DepthBook {
    * @param pair The traded pair for which book is needed
    * @returns The order book for the given pair.
    */
-  public getBook(pair: TradedPair): Table | undefined {
+  public getBook(pair: TradedPair): Table<bigint> | undefined {
     return this.pairToBook.get(getPairKey(pair));
   }
 
   public async run() {
-    const relay = async (evt: TableUpdate | SocketEvent.DISCONNECT) => {
+    const relay = async (evt: TableUpdate<bigint> | SocketEvent.DISCONNECT) => {
       if (evt === SocketEvent.DISCONNECT) {
         this.logger("Disconnected from WebSocket");
         return;
@@ -158,7 +158,7 @@ export class DepthBook {
    * @param pair traded pair to apply changes to
    * @param update snapshot to apply
    */
-  private applyChanges(pair: TradedPair, update: TableUpdate) {
+  private applyChanges(pair: TradedPair, update: TableUpdate<bigint>) {
     this.logger(
       `Applying the new evt ${update.msg_ids_start}: ${update.msg_ids_end}: ${update}`,
     );
@@ -222,7 +222,7 @@ export class DepthBook {
         this.logger(`Failed to get snapshot for ${pair}: ${res.error}`);
         throw new Error(res.error);
       }
-      let snap = res.result;
+      let snap = res.result as Snapshot<bigint>;
       this.pairToBook.set(key, snap.levels);
       this.pairToMsgId.set(key, snap.levels.msg_id);
       this.startSequence.set(key, snap.levels.msg_id);
