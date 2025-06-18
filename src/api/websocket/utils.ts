@@ -1,6 +1,6 @@
 import { BigNumberish, hexlify } from "ethers";
 import { ExchangeTicker, SocketEvent } from "./types";
-import { TradedPair } from "src/request_types";
+import { TradedPair } from "../../request_types";
 
 export function sleep(ms: number): Promise<void> {
   return new Promise<void>((resolve) => {

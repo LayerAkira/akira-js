@@ -166,7 +166,7 @@ export class LayerAkiraWSSAPI extends BaseWssApi implements ILayerAkiraWSSAPI {
    * @returns A promise that resolves when the WebSocket client is terminated.
    */
   public async connect(): Promise<void> {
-    return await super.connect(this.buildUrl);
+    return super.connect((base: string) => this.buildUrl(base));
   }
 
   public async subscribeOnDepthUpdate(
