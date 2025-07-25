@@ -37,7 +37,7 @@ export interface BBO {
 export interface Table<T extends string | bigint> {
   bids: [T, T, number][]; // Array of bid levels [price, volume, orders].
   asks: [T, T, number][]; // Array of ask levels [price, volume, orders].
-  msg_id: bigint; // The message ID of the snapshot.
+  msg_id?: bigint; // The message ID of the snapshot.
 }
 
 /**

@@ -1,6 +1,6 @@
-import { TradedPair } from "src/request_types";
+import { TradedPair } from "../../request_types";
 import { LayerAkiraWSSAPI } from "./LayerAkiraWSSAPI";
-import { Snapshot, Table, TableUpdate } from "src/response_types";
+import { Snapshot, Table, TableUpdate } from "../../response_types";
 import { ExchangeTicker, SocketEvent } from "./types";
 import { LayerAkiraHttpAPI } from "../http/LayerAkiraHttpAPI";
 import { getPairKey, timeout } from "./utils";
@@ -224,8 +224,8 @@ export class DepthBook {
       }
       let snap = res.result as Snapshot<bigint>;
       this.pairToBook.set(key, snap.levels);
-      this.pairToMsgId.set(key, snap.levels.msg_id);
-      this.startSequence.set(key, snap.levels.msg_id);
+      this.pairToMsgId.set(key, snap.levels.msg_id!);
+      this.startSequence.set(key, snap.levels.msg_id!);
 
       let pendingEvt = this.pendingEvt.get(key);
 
@@ -234,7 +234,7 @@ export class DepthBook {
         let first = pendingEvt[0];
         let last = pendingEvt[pendingEvt.length - 1];
 
-        if (snap.levels.msg_id < first.msg_ids_start - 1n) {
+        if (snap.levels.msg_id! < first.msg_ids_start - 1n) {
           this.logger(`Stale Snapshot to apply for ${pair} ${snap}`);
           this.pairToApplyChange.set(key, false);
           this.startSequence.delete(key);
@@ -243,7 +243,7 @@ export class DepthBook {
           return this.resetSnapshot(pair);
         }
 
-        if (snap.levels.msg_id > last.msg_id) {
+        if (snap.levels.msg_id! > last.msg_id) {
           this.logger(`Clearing: ${pendingEvt}`);
           this.pendingEvt.delete(key);
         }
@@ -251,7 +251,7 @@ export class DepthBook {
 
       this.pendingEvt.set(
         key,
-        pendingEvt?.filter((evt) => evt.msg_ids_end >= snap.levels.msg_id) ??
+        pendingEvt?.filter((evt) => evt.msg_ids_end >= snap.levels.msg_id!) ??
           [],
       );
 

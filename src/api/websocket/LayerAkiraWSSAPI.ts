@@ -1,5 +1,4 @@
 import { LayerAkiraHttpAPI } from "../http/LayerAkiraHttpAPI";
-import { IMessageEvent, w3cwebsocket as W3CWebSocket } from "websocket";
 import {
   BBO,
   CancelAllReport,
@@ -9,20 +8,15 @@ import {
   TableUpdate,
   Trade,
 } from "../../response_types";
-import { ExchangeTicker, Job, MinimalEvent, SocketEvent } from "./types";
-import {
-  getEpochSeconds,
-  getHashCode,
-  normalize,
-  sleep,
-  stringHash,
-} from "./utils";
+import { ExchangeTicker, SocketEvent } from "./types";
+import { getHashCode, normalize, stringHash } from "./utils";
 import {
   convertFieldsRecursively,
   convertToBigintRecursively,
 } from "../http/utils";
 import { formattedDecimalToBigInt, parseTableLvl } from "../utils";
 import { getPairKey } from "./utils";
+import { BaseWssApi } from "./BaseWssApi";
 
 /**
  * Represents a LayerAkira WebSocket API.
@@ -110,44 +104,10 @@ export interface ILayerAkiraWSSAPI {
  *      httpClient should have set credentials in order for WSS client to obtain listen key
  * @category Main Classes
  */
-export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
-  /**
-   * The WebSocket path.
-   */
-  public readonly wsPath: string;
-  /**
-   * Logger function.
-   */
-  public logger: (arg: string) => void;
-  /**
-   * Indicates whether the WebSocket should attempt reconnection.
-   */
-  public readonly shouldReconnect: boolean;
-  /**
-   * Indicates whether the WebSocket connection is closed.
-   */
-  public isClosed: boolean;
-  /**
-   * Timestamp of the time in seconds when recent connection was established
-   */
-  public lastConnected: number = 0;
-
+export class LayerAkiraWSSAPI extends BaseWssApi implements ILayerAkiraWSSAPI {
   private REISSUE_LISTEN_KEY_TIME = 28 * 60 * 1000; // 30min, take less to avoid disconnection
 
-  private readonly repeatCoolDownMillis: number;
-  private client: W3CWebSocket | null = null;
   private httpClient: LayerAkiraHttpAPI;
-  private responseQueue: IMessageEvent[] = [];
-  private processingQueue: boolean = false;
-  private jobs = new Map<number, Job<Result<string>>>();
-  private subscriptions: Map<
-    number,
-    (evt: any | SocketEvent.DISCONNECT) => Promise<void>
-  > = new Map();
-  private pendingSubscriptions: Map<
-    number,
-    (evt: any | SocketEvent.DISCONNECT) => Promise<void>
-  > = new Map();
   private rpcReqId = 0;
   private readonly exclusionParseBigIntFields = [
     "maker",
@@ -196,13 +156,17 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
     logger?: (arg: string) => void,
     repeatCoolDownMillis?: number,
   ) {
-    this.wsPath = wsPath;
+    super(wsPath, logger, shouldReconnect, repeatCoolDownMillis);
     this.httpClient = httpClient;
-    this.logger = logger ?? ((arg: string) => arg);
-    this.shouldReconnect = shouldReconnect;
-    this.isClosed = true;
-    this.repeatCoolDownMillis = repeatCoolDownMillis ?? 5 * 1000;
     this.depthListners = new Map();
+  }
+
+  /**
+   * Establishes a WebSocket connection and handles reconnection logic.
+   * @returns A promise that resolves when the WebSocket client is terminated.
+   */
+  public async connect(): Promise<void> {
+    return super.connect((base: string) => this.buildUrl(base));
   }
 
   public async subscribeOnDepthUpdate(
@@ -252,6 +216,7 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
       // unreachable bbo
       return;
     }
+    // TODO: move to the base
     if (evt === SocketEvent.DISCONNECT) {
       this.depthListners.forEach(async (cbs, key) => {
         let promises: Promise<void>[] = [];
@@ -300,7 +265,7 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
         ecosystem_book: ticker.isEcosystemBook,
       },
     };
-    const res = await this.subscribe(
+    const res = await this.subscribe<"OK">(
       clientCb,
       reqData,
       getHashCode(ticker, event),
@@ -349,7 +314,7 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
       id: this.rpcReqId,
       stream: `${SocketEvent.EXECUTION_REPORT}_${tradingAcc}`,
     };
-    const res = await this.subscribe(
+    const res = await this.subscribe<"OK">(
       clientCb,
       reqData,
       stringHash(normalize(tradingAcc)),
@@ -380,167 +345,25 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
     );
   }
 
-  /**
-   * Establishes a WebSocket connection and handles reconnection logic.
-   * @returns A promise that resolves when the WebSocket client is terminated.
-   */
-  public async connect(): Promise<void> {
-    this.isClosed = false;
-    while (this.shouldReconnect && !this.isClosed) {
-      try {
-        await this.run();
-      } catch (e) {
-        this.logger(`Encountered ${e}`);
-      }
-      this.logger(`Websocket disconnected...`);
-      await sleep(this.repeatCoolDownMillis);
-      // cleanup
-      this.subscriptions.forEach((clientCallback) => {
-        clientCallback(SocketEvent.DISCONNECT);
-      });
-      this.subscriptions.clear();
-    }
-    this.logger(`Websocket client terminated`);
-  }
-
   public close() {
-    this.isClosed = true;
+    super.close();
     if (this.listenKeyRefreshInterval) {
       clearInterval(this.listenKeyRefreshInterval);
       this.listenKeyRefreshInterval = null;
     }
-    this.client?.close();
   }
 
-  /**
-   * Subscribes to a WebSocket stream, in case of success Result<"OK"> would be returned
-   * @param cb - Callback function to handle incoming events from the stream.
-   * @param data - Data object containing subscription details.
-   * @param streamId - Unique identifier for the stream internally.
-   * @param idx - json rpc request id.
-   * @param timeout - Optional timeout value in milliseconds.
-   * @returns A promise containing the result of the subscription request.
-   */
-  private async subscribe(
-    cb: (evt: any) => Promise<void>,
-    data: Record<string, any>,
-    streamId: number,
-    idx: number,
-    timeout?: number,
-  ): Promise<Result<"OK">> {
-    const trySubscribe = async () => {
-      let client = this.client;
-      if (client === null) {
-        return {
-          error: `Ws not ready while do request: ${streamId} for ${data}`,
-        };
-      }
-      if (
-        this.subscriptions.has(streamId) ||
-        this.pendingSubscriptions.has(streamId)
-      ) {
-        return { error: `Duplicate stream id ${streamId} for ${data}` };
-      }
-      this.jobs.set(idx, new Job(idx, data, new MinimalEvent()));
-      this.pendingSubscriptions.set(streamId, cb);
-      this.logger(`Sending to ws: ${JSON.stringify(data)}`);
-      client!.send(JSON.stringify(data));
-      let result: Result<string> | undefined;
-      try {
-        result = await this.jobs.get(idx)!.event.wait(timeout);
-      } catch (e) {
-        this.jobs.delete(idx);
-        this.pendingSubscriptions.delete(streamId);
-        throw e;
-      }
+  protected onopen() {
+    this.startListenKeyRefresh();
+  }
 
-      this.jobs.delete(idx);
-      this.pendingSubscriptions.delete(streamId);
-      if (
-        result === undefined ||
-        result.result === undefined ||
-        client !== this.client
-      ) {
-        return { error: "Please retry" };
-      }
-      this.subscriptions.set(streamId, cb);
-      return result;
-    };
-    while (true) {
-      try {
-        return (await trySubscribe()) as Result<"OK">;
-      } catch (e) {
-        if (timeout !== undefined) return { error: "Timeout" };
-        await sleep(this.repeatCoolDownMillis);
-      }
+  protected onclose() {
+    if (this.listenKeyRefreshInterval) {
+      clearInterval(this.listenKeyRefreshInterval);
+      this.listenKeyRefreshInterval = null;
     }
   }
-
-  /**
-   * Unsubscribes from a WebSocket stream,  in case of success Result<"OK"> would be returned
-   * @param data - Data object containing unsubscription details.
-   * @param streamId - Unique identifier for the stream.
-   * @param idx - json rpc request id.
-   * @param timeout - Optional timeout value in milliseconds.
-   * @returns A promise containing the result of the unsubscription request.
-   */
-  private async unsubscribe(
-    data: Record<string, any>,
-    streamId: number,
-    idx: number,
-    timeout?: number,
-  ): Promise<Result<"OK">> {
-    const tryUnsubscribe = async () => {
-      let client = this.client;
-      if (client === undefined) return { result: "OK" };
-      if (
-        !this.subscriptions.has(streamId) &&
-        !this.pendingSubscriptions.has(streamId)
-      ) {
-        return { result: "OK" };
-      } else if (this.pendingSubscriptions.has(streamId))
-        return { error: "repeat" };
-
-      this.jobs.set(idx, new Job(idx, data, new MinimalEvent()));
-      this.logger(`Sending to ws: ${JSON.stringify(data)}`);
-      client!.send(JSON.stringify(data));
-      let result: Result<string> | undefined;
-      try {
-        result = await this.jobs.get(idx)!.event.wait(timeout);
-      } catch (e) {
-        this.jobs.delete(idx);
-        throw e;
-      }
-      this.jobs.delete(idx);
-      if (
-        result === undefined ||
-        result.result === undefined ||
-        client !== this.client
-      ) {
-        return { error: "Please retry" };
-      }
-      this.subscriptions.delete(streamId);
-      return result;
-    };
-    while (true) {
-      try {
-        return (await tryUnsubscribe()) as Result<"OK">;
-      } catch (e) {
-        if (timeout !== undefined) return { error: "Timeout" };
-        await sleep(this.repeatCoolDownMillis);
-      }
-    }
-  }
-
-  /**
-   * Establishes a WebSocket connection and handles incoming messages.
-   * @returns A promise that resolves when the WebSocket client is closed.
-   */
-  private async run(): Promise<void> {
-    // cleanup
-    this.jobs.forEach((job) => job.event.emit());
-
-    // issue listen key and establish connection
+  private async buildUrl(base: string) {
     const signer = this.httpClient.getSigner();
     if (signer === undefined) {
       this.logger(`Cant establish ws connection because no auth passed`);
@@ -554,92 +377,10 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
       );
       return;
     }
-
-    return new Promise((resolve) => {
-      if (this.isClosed) {
-        this.logger(`Ws is closed`);
-        resolve();
-        return;
-      }
-
-      let client = new W3CWebSocket(
-        `${this.wsPath}?listenKey=${listenKey.result}&signer=${signer?.toString()}`,
-        undefined,
-        undefined,
-        {
-          // Authorization: listenKey.result,
-          // Signer: signer?.toString(),
-        },
-      );
-
-      client.binaryType = "arraybuffer";
-
-      client.onopen = () => {
-        this.logger(
-          `Connect to websocket api established for ${signer} ${this.httpClient.getTradingAccount()}`,
-        );
-        this.client = client;
-        this.lastConnected = getEpochSeconds();
-        this.startListenKeyRefresh();
-      };
-
-      client.onmessage = (e) => {
-        this.enqueueMessage(e);
-      };
-
-      client.onerror = (error) => {
-        this.logger(`WebSocket Error: ${error}`);
-        client?.close();
-      };
-
-      client.onclose = (closeEvent) => {
-        this.logger(`WebSocket closed: ${closeEvent}`);
-        this.client = null;
-
-        if (this.listenKeyRefreshInterval) {
-          clearInterval(this.listenKeyRefreshInterval);
-          this.listenKeyRefreshInterval = null;
-        }
-
-        resolve();
-      };
-    });
+    return `${base}?listenKey=${listenKey.result}&signer=${signer?.toString()}`;
   }
 
-  private enqueueMessage(message: IMessageEvent) {
-    // if (message.data instanceof Buffer) { only node js env not browser
-    //   const buffer = message.data as Buffer;
-    //   message.data = buffer.toString('utf-8');
-    // } else
-    if (message.data instanceof ArrayBuffer) {
-      // Handle data as ArrayBuffer (binary data)
-      const arrayBuffer = message.data;
-      const decoder = new TextDecoder("utf-8");
-      message = { data: decoder.decode(arrayBuffer) };
-    }
-    this.logger("Received: '" + message.data + "'");
-    this.responseQueue.push(message);
-    if (!this.processingQueue) {
-      this.processingQueue = true;
-      this.processQueue();
-    }
-  }
-
-  private async processQueue() {
-    while (this.responseQueue.length > 0) {
-      const message = this.responseQueue.shift();
-      if (message) await this.handleSocketMessage(message);
-    }
-    this.processingQueue = false;
-  }
-
-  /**
-   * Handles incoming WebSocket messages by parsing JSON data and emitting events accordingly.
-   * @param e The WebSocket message event containing the message data.
-   */
-  private async handleSocketMessage(e: IMessageEvent) {
-    let json = JSON.parse(e.data.toString());
-    if (json.id !== undefined) return this.jobs.get(json.id)?.event.emit(json);
+  protected async handleSubsEvent(json: Record<string, any>) {
     let [bDecimals, qDecimals] = [0, 0];
     if (json?.pair !== undefined) {
       const pair = json?.pair;
@@ -689,14 +430,14 @@ export class LayerAkiraWSSAPI implements ILayerAkiraWSSAPI {
       }
     } else {
       this.logger(
-        `Unknown socket type of subscription message ${e.data.toString()}`,
+        `Unknown socket type of subscription message ${json.toString()}`,
       );
       return;
     }
     json = convertToBigintRecursively(json, this.exclusionParseBigIntFields);
     if (!this.subscriptions.has(subscription)) {
       // TODO need to unsubscribe eventually
-      this.logger(`Unknown subscription message ${e.data.toString()}`);
+      this.logger(`Unknown subscription message ${json.toString()}`);
       return;
     }
     await this.subscriptions.get(subscription)!(json["result"]);
