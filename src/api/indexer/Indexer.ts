@@ -211,10 +211,12 @@ export class IndexerAPI extends BaseHttpAPI {
     cursor = null,
     num = 50,
     reverse = false,
-  }: DepositEventParams): Promise<Result<DbDeposit[]>> {
+  }: DepositEventParams): Promise<
+    Result<{ data: DbDeposit[]; cursor: string | null }>
+  > {
     let path = `/deposits/${trader}`;
     if (token_address !== null) path += "/" + token_address;
-    return await this.get<Result<DbDeposit[]>>(
+    return await this.get<Result<{ data: DbDeposit[]; cursor: string | null }>>(
       path,
       { cursor, num, reverse },
       false,
