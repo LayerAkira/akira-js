@@ -6,7 +6,7 @@ import {
   TokenAddressMap,
   Withdraw,
 } from "../../request_types";
-import { SignData } from "../http/types";
+import { FastCancelSignData, SignData } from "../http/types";
 import { Address } from "../../types";
 
 /**
@@ -303,6 +303,41 @@ export function getTypedDataForJWT(
       welcome: "Sign in to LayerAkira",
       to: "\tChallenge:",
       exchange: message,
+    },
+  };
+}
+
+/**
+ * Generates typed data for a message to issue fast sign key
+ * @param message - The message data to be signed
+ * @param domain - starknet domain where exchange name and version and chain specified
+ * @param durationValidHours
+ * @returns The generated typed data.
+ */
+export function getTypedDataForFastCancel(
+  message: FastCancelSignData,
+  domain: StarknetDomain,
+  durationValidHours: number = 1,
+): TypedData {
+  return {
+    domain: domain,
+    types: {
+      ...domainType,
+      Message: [
+        { name: "welcome", type: "string" },
+        { name: "to", type: "string" },
+        { name: "exchange", type: "string" },
+        { name: "warning", type: "string" },
+        { name: "expiration", type: "string" },
+      ],
+    },
+    primaryType: "Message",
+    message: {
+      welcome: "Fast sign LayerAkira",
+      to: "\tChallenge:",
+      exchange: message.msg,
+      warning: `valid for ${durationValidHours} h`,
+      expiration: `expiration ts ${message.expiration_ts}`,
     },
   };
 }

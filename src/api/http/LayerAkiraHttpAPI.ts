@@ -1,6 +1,6 @@
 import { Address } from "../../types";
 import { BigNumberish } from "ethers";
-import { SignData } from "./types";
+import { FastCancelSignData, SignData } from "./types";
 import { convertFieldsRecursively } from "./utils";
 import {
   CancelRequest,
@@ -81,6 +81,33 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
       `/sign/request_sign_data?user=${signer}&account=${account}`,
       undefined,
       true,
+    );
+  }
+
+  /**
+   * @param signer - public key that is responsible for signing action on behalf of account
+   * @param account - trading account
+   * Retrieves data that client need to sign via private key of @signer to show that he is real owner of account
+   * @returns A Promise that resolves with the result of {msg: string, expiration_ts: number}
+   */
+  public async getFastSignCancelData(
+    signer: Address,
+    account: Address,
+  ): Promise<Result<FastCancelSignData>> {
+    return await this.get<Result<FastCancelSignData>>(
+      `/sign/request_fast_sign_key?user=${signer}&account=${account}`,
+      undefined,
+      true,
+    );
+  }
+  public async issueFastSignKey(
+    msg: BigNumberish,
+    signature: TraderSignature,
+  ): Promise<Result<string>> {
+    return await this.post(
+      "/sign/issue_fast_sign_key",
+      { msg: msg, signature: signature },
+      false,
     );
   }
 
@@ -342,6 +369,7 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
         ...req,
         ticker: { base: "0x0", quote: "0x0", to_ecosystem_book: false },
         sign: ["0x0", "0x0"],
+        fast_sign_key: req.fast_sign_key,
       },
       false,
     );
