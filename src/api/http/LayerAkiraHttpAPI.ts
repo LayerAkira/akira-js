@@ -333,6 +333,19 @@ export class LayerAkiraHttpAPI extends BaseHttpAPI {
       false,
     );
   }
+  public async cancelWebLimitOrder(
+    req: CancelRequest,
+  ): Promise<Result<{ cancelHash: string; signature: string[] }>> {
+    return await this.post(
+      "/cancel_order_web",
+      {
+        ...req,
+        ticker: { base: "0x0", quote: "0x0", to_ecosystem_book: false },
+        sign: ["0x0", "0x0"],
+      },
+      false,
+    );
+  }
 
   /**
    * Sending request to exchange to cancel specific order on exchange
