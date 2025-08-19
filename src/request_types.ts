@@ -27,7 +27,7 @@ export enum SignScheme {
   ACCOUNT = "account",
   DIRECT = "direct",
   NOT_SPECIFIED = "",
-  HAVE_APPROVE = "hash_approve",
+  HAVE_APPROVE = "web_limit_order",
   //..
 }
 
