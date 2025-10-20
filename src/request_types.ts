@@ -27,6 +27,7 @@ export enum SignScheme {
   ACCOUNT = "account",
   DIRECT = "direct",
   NOT_SPECIFIED = "",
+  HAVE_APPROVE = "web_limit_order",
   //..
 }
 
@@ -237,6 +238,7 @@ export interface CancelRequest {
   salt: bigint;
   ticker?: ExchangeTicker;
   sign_scheme: SignScheme;
+  fast_sign_key?: string;
 }
 
 /**

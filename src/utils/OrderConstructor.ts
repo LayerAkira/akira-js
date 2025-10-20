@@ -35,6 +35,8 @@ export class OrderConstructor {
   private readonly routerFeeRecipient: Address;
   private source: string;
   private signScheme: SignScheme;
+  private integratorFeeRecipient: Address;
+  private integratorFeeMap: TickerFeeMap;
 
   /**
    * Creates an instance of OrderConstructor.
@@ -50,6 +52,8 @@ export class OrderConstructor {
    * @param routerSigner The address of the router signer (default is NULL_ADDRESS).
    * @param routerFeeRecipient The address of the router fee recipient (default is NULL_ADDRESS).
    * @param sign_scheme
+   * @param integratorFeeRecipient
+   * @param integratorFeeMap
    */
   constructor(
     trader: Address,
@@ -64,6 +68,8 @@ export class OrderConstructor {
     routerSigner: Address = NULL_ADDRESS,
     routerFeeRecipient: Address = NULL_ADDRESS,
     sign_scheme: SignScheme = SignScheme.ECDSA,
+    integratorFeeRecipient: Address = NULL_ADDRESS,
+    integratorFeeMap: TickerFeeMap = new TickerFeeMap([0, 0]),
   ) {
     this.trader = trader;
     this.routerSigner = routerSigner;
@@ -77,6 +83,8 @@ export class OrderConstructor {
     this.nativeGasFeeToken = nativeGasFeeToken;
     this.source = source;
     this.signScheme = sign_scheme;
+    this.integratorFeeRecipient = integratorFeeRecipient;
+    this.integratorFeeMap = integratorFeeMap;
   }
 
   /**
@@ -289,6 +297,8 @@ export class OrderConstructor {
         0,
         0,
         0,
+        0,
+        0,
       ),
       sorFeeTicker,
     );
@@ -427,9 +437,11 @@ export class OrderConstructor {
         taker_pbips: router_pbips_taker ?? this.routerFeeMap.get(ticker)[1],
       },
       integrator_fee: {
-        recipient: integrator_address ?? this.routerFeeRecipient,
-        maker_pbips: integrator_pbips_maker ?? 0,
-        taker_pbips: integrator_pbips_taker ?? 0,
+        recipient: integrator_address ?? this.integratorFeeRecipient,
+        maker_pbips:
+          integrator_pbips_maker ?? this.integratorFeeMap.get(ticker)[0],
+        taker_pbips:
+          integrator_pbips_taker ?? this.integratorFeeMap.get(ticker)[1],
       },
       apply_to_receipt_amount: apply_to_receipt_amount,
       gas_fee: {

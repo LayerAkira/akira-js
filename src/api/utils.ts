@@ -34,7 +34,7 @@ export function bigIntToFormattedDecimal(
   digitsAfterDot?: number,
 ): string {
   digitsAfterDot = digitsAfterDot ?? decimals;
-  const divisor = BigInt(10 ** decimals);
+  const divisor = 10n ** BigInt(decimals);
   const integerPart = x / divisor;
   const fractionalPart = x % divisor;
 
